@@ -39,8 +39,7 @@ As I've mentioned, this is the fourth rough draft of the trix package.
 New drafts are always a result of some technical problem I wanted to 
 solve by starting over. In this case, I screwed up my local repository
 and don't want the hassle of unscewing it. Anyway, several changes
-- changes that affect many classes - are needed, so it's a good time 
-for it.
+that affect many classes are needed, so this is a good time for it.
 
 The trix package is probably going to look pretty bare for a while,
 but I've renamed the old project to trix.rd3 - the last decent
