@@ -15,7 +15,7 @@ except:
 #
 # VERSION
 #  - The official version of the `trix` package is currently
-#    "Version: zero; rough draft three; under construction".
+#    "Version: zero; rough draft four; under construction".
 #
 VERSION = 0.0000
 
