@@ -1,0 +1,9 @@
+
+
+Unlike what will soon begin to appear here in `trix.x`, these
+modules in `trix.x.unused` probably work somewhere between fairly
+well and perfectly.
+
+They're only here because they're used noplace else in the library.
+They'll probably remain here until they're actually needed.
+
