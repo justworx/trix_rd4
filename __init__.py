@@ -624,14 +624,8 @@ class trix(object):
 		>>> f.format("Hello!", ff="title")
 		>>> f.output("Hello!", ff="title")
 		"""
-		if 'f' in k:
-			f = k.pop("f", "JDisplay")
-			return cls.ncreate("fmt.%s"%f, *a, **k)
-		
-		else:
-			# DEPRECATED! Use f='<CLASSNAME>' for a class in trix.fmt
-			fmt = k.pop('fmt', 'fmt.JDisplay')
-			return cls.ncreate(fmt, *a, **k)
+		f = k.pop("f", "JDisplay")
+		return cls.ncreate("fmt.%s"%f, *a, **k)
 	
 	
 	# DISPLAY - Util. JSON is the main data format within the package.
@@ -670,7 +664,25 @@ class trix(object):
 		"""
 		return xdata(cls, data, **k)
 	
-	
+	"""
+	#
+	# ------------------- X -------------------
+	#
+	# EXPERIMENTAL
+	#  - Playing around with signal handling.
+	#
+	@classmethod
+	def signals(cls, signal, action):
+		#
+		# UNDER CONSTRUCTION - Going to use the new util.signals feature.
+		#
+		try:
+			xhandler = trix.create('signal.signal', signal)
+			cls.__sighist[signal].append(xhandler)
+		except AttributeError:
+			cls.__sighist = trix.ncreate('util.bag.Bag', list)
+			cls.__sighist[signal].append(signal.signal(signal, action))
+	"""
 	
 	
 	# ---- LOGGING -----
@@ -780,6 +792,8 @@ value      = trix.value
 #
 # LOADER (and NLoader)
 #
+
+
 class Loader(object):
 	"""Intended for internal use."""
 	
