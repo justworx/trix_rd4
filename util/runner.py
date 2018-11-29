@@ -4,13 +4,49 @@
 # of the GNU Affero General Public License.
 #
 
-
+import signal
 from .enchelp import * # trix
 
 DEF_SLEEP = 0.1
 
 class Runner(EncodingHelper):
 	"""Manage an event loop, start, and stop."""
+	
+	""" OOPS...
+	#
+	# UNDER CONSTRUCTION!
+	#
+	# I'm hoping the code in this section will catch KeyboardInterrupt
+	# and allow the runners to respond according to an as-yet-unknown
+	# set of configurable instructions.
+	#
+	@classmethod
+	def interrupted(cls):
+		try:
+			return cls.__interrupted
+		except:
+			try:
+				SIGINT = signal.SIGINT
+			except:
+				SIGINT = 2
+			cls.__interrupt = signal.signal(SIGINT, cls.__on_interrupt)
+			cls.__interrupted = False
+			return cls.__on_interrupt
+	
+	@classmethod
+	def __on_interrupt(cls, *a):
+		cls.__interrupted = True
+	
+	@classmethod
+	def __clear_interrupt(cls):
+		cls.__interrupted = False
+	
+	@classmethod
+	def interrupted(cls):
+		return cls.__interrupted
+	"""
+	
+	
 	
 	def __init__(self, config=None, **k):
 		"""Pass config and/or kwargs."""
