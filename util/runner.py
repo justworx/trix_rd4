@@ -4,60 +4,40 @@
 # of the GNU Affero General Public License.
 #
 
-import signal
-from .enchelp import * # trix
+
+from ..util.enchelp import * # trix
+#from .enchelp import * # trix
+
 
 DEF_SLEEP = 0.1
 
+
 class Runner(EncodingHelper):
-	"""Manage an event loop, start, and stop."""
-	
-	""" OOPS...
-	#
-	# UNDER CONSTRUCTION!
-	#
-	# I'm hoping the code in this section will catch KeyboardInterrupt
-	# and allow the runners to respond according to an as-yet-unknown
-	# set of configurable instructions.
-	#
-	@classmethod
-	def interrupted(cls):
-		try:
-			return cls.__interrupted
-		except:
-			try:
-				SIGINT = signal.SIGINT
-			except:
-				SIGINT = 2
-			cls.__interrupt = signal.signal(SIGINT, cls.__on_interrupt)
-			cls.__interrupted = False
-			return cls.__on_interrupt
-	
-	@classmethod
-	def __on_interrupt(cls, *a):
-		cls.__interrupted = True
-	
-	@classmethod
-	def __clear_interrupt(cls):
-		cls.__interrupted = False
-	
-	@classmethod
-	def interrupted(cls):
-		return cls.__interrupted
+	"""
+	Manage a (possibly threaded) event loop, start, and stop. Override
+	the `io` method, defining actions that must be taken each pass 
+	through the loop.
 	"""
 	
+	@classmethod
+	def on_signal(cls, signum, stackframe):
+		print ("SIGNAL!", signum, stackframe)
 	
 	
+	#
+	# INIT
+	#
 	def __init__(self, config=None, **k):
 		"""Pass config and/or kwargs."""
 		
-		self.__jformat = trix.ncreate('fmt.JCompact')
 		self.__active = False
 		self.__running = False
+		self.__threaded = False
+		
 		self.__csock = None
 		self.__cport = None
-		self.__threaded = False
 		self.__lineq = None
+		self.__jformat = trix.ncreate('fmt.JCompact')
 		
 		
 		try:
@@ -103,33 +83,24 @@ class Runner(EncodingHelper):
 		# 
 		EncodingHelper.__init__(self, config)
 		
+		
+		#
 		# running and communication
+		#
 		self.__sleep = config.get('sleep', DEF_SLEEP)
 		
-		# connect to calling process
+		# If CPORT is defined in config, connect to calling process.
 		if "CPORT" in config:
-			
 			#
-			# moved here 20181106 (from above)
+			# Set up for communication via socket connection.
 			#
 			self.__lineq = trix.ncreate('util.lineq.LineQueue')
-			
-			
 			self.__cport = p = config["CPORT"]
 			self.__csock = trix.ncreate('util.sock.sockcon.sockcon', p)
 			try:
 				self.__csock.writeline("%i" % trix.pid())
 			except Exception as ex:
 				trix.log("csock-write-pid", trix.pid(), type(ex), ex.args)
-		
-		#
-		# Create a CallIO object, which calls .io() repeatedly and works 
-		# safely, either inside a thread or normally. The purpose of
-		# separating this functionality is to make sure that this object
-		# is destroyed even if still running in a thread at the time of
-		# deletion.
-		#
-		self.__callio = CallIO(trix.proxify(self))
 	
 	
 	#
@@ -166,7 +137,6 @@ class Runner(EncodingHelper):
 		
 		finally:
 			self.__csock = None
-			self.__proxy = None
 	
 	
 	#
@@ -177,24 +147,6 @@ class Runner(EncodingHelper):
 	#  - This helps prevent raising of irrelevant Exceptions that might
 	#    mask the true underlying error.
 	#
-
-	@property
-	def csock(self):
-		"""Used internally when opened with trix.process()."""
-		try:
-			return self.__csock
-		except:
-			self.__csock = None
-			return self.__csock
-	
-	@property
-	def config(self):
-		"""The configuration dict - for reference."""
-		try:
-			return self.__config
-		except:
-			self.__config = {}
-			return self.__config
 	
 	@property
 	def active(self):
@@ -229,76 +181,59 @@ class Runner(EncodingHelper):
 		"""Set time to sleep after each pass through the run loop."""
 		self.__sleep = f
 	
-	
-	# START
-	def start(self):
-		"""Run in a new thread."""
+	@property
+	def config(self):
+		"""The configuration dict - for reference."""
 		try:
-			self.__run_begin()
-			trix.start(self.__callio.callio)
-			self.__threaded = True
-		except ReferenceError:
-			self.stop()
-		except Exception as ex:
-			msg = "err-runner-except;"
-			trix.log(msg, str(ex), ex.args, type=type(self), xdata=xdata())
-			self.stop()
-			raise
-			
-	def starts(self):
-		"""Run in a new thread; returns self."""
-		self.start()
-		return self
+			return self.__config
+		except:
+			self.__config = {}
+			return self.__config
+	
+	@property
+	def csock(self):
+		"""
+		Used internally when opened with trix.process(), or any time a
+		keyword argument "CSOCK" is given. 
+		"""
+		try:
+			return self.__csock
+		except:
+			self.__csock = None
+			return self.__csock
 	
 	
+	# ---- orisc -----
 	
 	# OPEN
 	def open(self):
-		"""Called by run() if self.active is False."""
+		"""
+		Called by run() if self.active is False.
+		
+		Override this method adding any code that needs to execute in
+		order for the subclass to work. Call `Runner.open()`!)
+		"""
 		self.__active = True
 	
 	
-	# CLOSE
-	def close(self):
-		"""
-		This placeholder is called on object deletion. It may be called
-		anytime manually, but you should probably call .stop() first if
-		the object is running. Some classes may call .close() in .stop().
-		"""
-		self.__active = False
-	
-	
-	#
 	# RUN
-	#
-	def run(self, threaded=False):
+	def run(self):
 		"""Loop, calling self.io(), while self.running is True."""
 		#
 		# All of this exists in case Runner is running in the main thread.
 		# The code must be duplicated in start/CallIO when threaded using
 		# the `Runner.start` method. 
 		#
-		try:
-			self.__run_begin()
-			self.__callio.callio()
-		except Exception as ex:
-			msg = "Runner.run error stop;"
-			trix.log(msg, str(ex), ex.args, type=type(self))
-			raise
-		finally:
-			self.__run_end()
-	
-	def __run_begin(self):
 		if not self.active:
 			self.open()
-		if self.running:
-			raise Exception('already-running')
+		
 		self.__running = True
-	
-	def __run_end(self):
-		self.__running = False
-		self.__proxy = None
-		self.stop()
+		while self.__running:
+			self.io()
+			self.sleep(self.sleep)
+		
+		if self.active:
+			self.shutdown()
 	
 	
 	# IO
@@ -325,8 +260,80 @@ class Runner(EncodingHelper):
 				
 				# read another line (returns None when done)
 				q = self.__lineq.readline()
-
-
+	
+	
+	# STOP
+	def stop(self):
+		"""Stop the run loop."""
+		self.__running = False
+		self.__threaded = False
+	
+	
+	# CLOSE
+	def close(self):
+		"""
+		This placeholder is called on object deletion. It may be called
+		anytime manually, but you should probably call .stop() first if
+		the object is running. Some classes may call .close() in .stop().
+		"""
+		self.__active = False
+	
+	
+	# ---- utility -----
+	
+	# START
+	def start(self):
+		"""Start running in a new thread."""
+		try:
+			trix.start(self.io)
+			self.__threaded = True
+		except Exception as ex:
+			msg = "err-runner-except;"
+			trix.log(msg, str(ex), ex.args, type=type(self), xdata=xdata())
+			self.stop()
+			raise
+			
+	def starts(self):
+		"""Start running in a new thread; returns self."""
+		self.start()
+		return self
+	
+	
+	# SHUTDOWN
+	def shutdown(self):
+		"""Stop and close."""
+		with thread.allocate_lock():
+			try:
+				self.stop()
+				self.close()
+			except Exception as ex:
+				msg = "Runner.shutdown error;"
+				trix.log(msg, str(ex), ex.args, type=type(self))
+				raise
+	
+	
+	# STATUS
+	def status(self):
+		"""Return a status dict."""
+		return dict(
+			ek = self.ek,
+			active = self.active,
+			running = self.running,
+			threaded= self.threaded,
+			sleep   = self.sleep,
+			config  = self.config,
+			cport   = self.__cport
+		)
+	
+	
+	# DISPLAY
+	def display(self):
+		"""Print status."""
+		trix.display(self.status())
+	
+	
+	# ---- handle CPORT socket queries -----
+	
 	# QUERY
 	def query(self, q):
 		"""
@@ -347,91 +354,5 @@ class Runner(EncodingHelper):
 				self.stop()
 				r = dict(query=q, reply=self.status())
 				return r
-
 	
-	# STOP
-	def stop(self):
-		"""Stop the run loop."""
-		trix.log("runner stop")
-		self.__running = False
-		self.__threaded = False
-		self.__proxy = None
-	
-	# STATUS
-	def status(self):
-		"""Return a status dict."""
-		return dict(
-			ek = self.ek,
-			active = self.active,
-			running = self.running,
-			threaded= self.threaded,
-			sleep   = self.sleep,
-			config  = self.config,
-			cport   = self.__cport
-		)
-	
-	# SHUTDOWN
-	def shutdown(self):
-		"""Stop and close."""
-		with thread.allocate_lock():
-			try:
-				self.stop()
-				self.close()
-			except Exception as ex:
-				msg = "Runner.shutdown error;"
-				trix.log(msg, str(ex), ex.args, type=type(self))
-				raise
-	
-	
-	def on_interrupt(self):
-		pass
-	
-	
-	# DISPLAY
-	def display(self):
-		"""Print status."""
-		trix.display(self.status())
-
-
-
-
-
-class CallIO(object):
-	"""
-	Runner can't call trix.start to start or it won't stop unless 
-	specifically told to (by calling, for example, `myrunner.stop()`.
-	Use a CallIO object to call io() just as Runner.run would but from
-	within a thread that holds its link to the Runner object by proxy.
-	Then, when the object is destroyed in the main thread, it will no
-	longer remain in the alternate thread.
-	"""
-	def __init__(self, runner):
-		self.__runner = trix.proxify(runner)
-	
-	def callio(self):
-		try:
-			while self.__runner.running:
-				try:
-					self.__runner.io()
-					time.sleep(self.__runner.sleep)
-				except KeyboardInterrupt:
-					#
-					# This is imprecice - needs to change. This only happens 
-					# when self.running or in the incredibly rare event that
-					# the interrupt is caught during self.io(). Otherwise the
-					# main thread will catch it and so what can be accomplished
-					# by it other than the prevention of any use for the
-					# KeyboardInterrupt exception?
-					#
-					# I think I need to learn to use the signal module, and to
-					# figure out how the catching of interrupts may be usefully
-					# applied to all running Runner objects.
-					#
-					self.__runner.on_interrupt()
-		
-		except ReferenceError:
-			pass
-
-
-
 
