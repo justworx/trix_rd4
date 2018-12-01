@@ -4,13 +4,9 @@
 # of the GNU Affero General Public License.
 #
 
-
 import signal
 
 
-#
-# SIGNALS - Manage all Signal objects.
-#
 class Signals(object):
 	"""
 	Manage multiple signal objects.
@@ -36,7 +32,7 @@ class Signals(object):
 	"""
 	
 	@classmethod
-	def add(cls, signal, fn):
+	def add(cls, signal, fn, **k):
 		try:
 			# Assume the whole thing's set up; this makes subsequent calls
 			# respond faster.
@@ -50,7 +46,7 @@ class Signals(object):
 			
 			# Make sure the Signal object is defined in the __signals dict.
 			if not signal in cls.__signals:
-				cls.__signals[signal] = Signal(signal)
+				cls.__signals[signal] = Signal(signal, **k)
 			
 			# Finally, add the signal callback.
 			cls.__signals[signal].add(fn)
@@ -97,11 +93,18 @@ class Signal(object):
 		The previous signal handler will be stored, then later restored 
 		by this object's `__del__` method.
 		
-		Pass a keyword argument suppress=True if you want the default
+		Pass a keyword argument suppression=True if you want the default
 		action to be suppressed when no handlers are present.
+		
+		Pass a keyword argument transparent=True if you want the signal
+		to be handled by the `self.prior` handler after processing by the
+		`Signal.handle` method. NOTE: This overrides the 'suppression'
+		keyword argument; If "transparent" is True, signals are always
+		handled by the default handler after other processing.
 		"""
 		
-		self.__suppression = k.get("suppress", False)
+		self.__transparent = k.get("transparent", False)
+		self.__suppression = k.get("suppression", False)
 		
 		# Only allow self.__signal and self.__prior be set here in the
 		# first call to __init__.
@@ -129,17 +132,19 @@ class Signal(object):
 		
 		# if there was a previous handler, reset it
 		if self.prior:
-			dbg = signal.signal(self.signal, self.prior)
 			self.__prior = None
 		
+		# delete this objects handlers
 		try:
-			# delete this objects handlers
 			del(self.__handlers)
 		except:
 			pass
 	
 	
 	
+	#
+	# properties
+	#
 	@property
 	def signal(self):
 		"""Return the signal (int) this object reports on."""
@@ -152,7 +157,7 @@ class Signal(object):
 	
 	
 	#
-	# DEL
+	# HANDLE - Handle a signal.
 	#
 	def handle(self, signal, stackframe):
 		"""Call each signal-handler function."""
@@ -167,11 +172,6 @@ class Signal(object):
 				try:
 					handler(signal, stackframe)
 				except:
-					#
-					# DEBUGGING
-					#
-					trix.log(["DEBUG HANDLE:", xdata()])
-					
 					# add failed handler to the remove list
 					rmvlist.append(handler)
 			
@@ -179,8 +179,10 @@ class Signal(object):
 			for handler in rmvlist:
 				self.__handlers.remove(handler)
 		
-		if not self.__handlers and not self.__suppression:
-			self.prior()
+		if self.__transparent:
+			self.prior(signal, stackframe)
+		elif not self.__handlers and not self.__suppression:
+			self.prior(signal, stackframe)
 	
 	
 	#
