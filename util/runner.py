@@ -4,9 +4,9 @@
 # of the GNU Affero General Public License.
 #
 
-
-from ..util.enchelp import * # trix
-#from .enchelp import * # trix
+from .xthread import *
+from .enchelp import * # trix
+from .stream.buffer import *
 
 
 DEF_SLEEP = 0.1
@@ -19,14 +19,34 @@ class Runner(EncodingHelper):
 	through the loop.
 	"""
 	
+	# ---- SIGNAL HANDLING -----
+	
 	@classmethod
 	def on_signal(cls, signum, stackframe):
-		print ("SIGNAL!", signum, stackframe)
+		"""
+		The SIGINT signal	toggles the "pause" state of all output. All
+		Runner objects buffer output while in this pause-state, and write
+		the buffered content when the pause-state is turned off.  
+		"""
+		if signum == 2:
+			self.on_sigint()
 	
 	
+	# ON-SIGINT - Class-wide handling of KeyboardInterrupt
+	@classmethod
+	def on_sigint(cls):
+		"""For now, does nothing."""
+		pass
+	
+	
+	
+	# ----------------------------------------------------------------
 	#
+	# OBJECT METHODS
+	#
+	# ----------------------------------------------------------------
+	
 	# INIT
-	#
 	def __init__(self, config=None, **k):
 		"""Pass config and/or kwargs."""
 		
@@ -39,13 +59,12 @@ class Runner(EncodingHelper):
 		self.__lineq = None
 		self.__jformat = trix.ncreate('fmt.JCompact')
 		
-		
 		try:
 			#
 			# CONFIG
 			#  - If this object is part of a superclass that's already set 
-			#    a self.config value, then `config` and `k` are already part
-			#    or all of it.
+			#    a self.config value, then kwargs have already been merged
+			#    into `config`.
 			#
 			config = self.config
 		except:
@@ -87,9 +106,28 @@ class Runner(EncodingHelper):
 		#
 		# running and communication
 		#
-		self.__sleep = config.get('sleep', DEF_SLEEP)
+		self.__newl   = config.get('newl', '\r\n')
+		self.__output = out = config.get('output', sys.stdout)
+		self.__sleep  = config.get('sleep', DEF_SLEEP)
 		
+		# Let kwargs set the "name" property; otherwise name is generated
+		# on request of property `self.name`.
+		if 'name' in config:
+			self.__name = str(config['name'])
+		
+		#
+		# WRITER
+		#  - self.__output must remain as configured (or default stdout)
+		#    but self.__writer may be switched by forthcoming features,
+		#    and will always be the mechanism called on to print text to
+		#    the terminal (or alternate recipient).
+		#
+		self.__writer = self.__output
+		
+		
+		#
 		# If CPORT is defined in config, connect to calling process.
+		#
 		if "CPORT" in config:
 			#
 			# Set up for communication via socket connection.
@@ -101,11 +139,12 @@ class Runner(EncodingHelper):
 				self.__csock.writeline("%i" % trix.pid())
 			except Exception as ex:
 				trix.log("csock-write-pid", trix.pid(), type(ex), ex.args)
+				self.__csock = None
+				self.__lineq = None
+				
 	
 	
-	#
 	# DEL
-	#
 	def __del__(self):
 		"""Stop. Subclasses override to implement stopping actions."""
 		try:
@@ -119,7 +158,6 @@ class Runner(EncodingHelper):
 			
 			if self.__csock:
 				try:
-					#trix.log("runner-csock", "shutdown")
 					self.__csock.shutdown(SHUT_RDWR)
 				except Exception as ex:
 					trix.log(
@@ -151,7 +189,11 @@ class Runner(EncodingHelper):
 	@property
 	def active(self):
 		"""True if open() has been called; False after close()."""
-		return self.__active
+		try:
+			return self.__active
+		except:
+			self.__active = False
+			return self.__active
 	
 	@property
 	def running(self):
@@ -165,7 +207,11 @@ class Runner(EncodingHelper):
 	@property
 	def threaded(self):
 		"""True if running in a thead after call to self.start()."""
-		return self.__threaded
+		try:
+			return self.__threaded
+		except:
+			self.__threaded = None
+			return self.__threaded
 	
 	@property
 	def sleep(self):
@@ -180,6 +226,24 @@ class Runner(EncodingHelper):
 	def sleep(self, f):
 		"""Set time to sleep after each pass through the run loop."""
 		self.__sleep = f
+	
+	@property
+	def name(self):
+		"""
+		Return the runner name, if one was provided to the constructor
+		via kwarg "name". (Otherwise, a name will be generated using the
+		pattern "<class_name>-<thread_ident>".)
+		"""
+		try:
+			return self.__name
+		except:
+			self.__name = "Runner-%s" % str(self.ident)
+			return self.__name
+	
+	@property
+	def ident(self):
+		"""Return thread-id."""
+		return thread.get_ident()
 	
 	@property
 	def config(self):
@@ -202,10 +266,34 @@ class Runner(EncodingHelper):
 			self.__csock = None
 			return self.__csock
 	
+	@property
+	def writer(self):
+		"""Current writer; Eg., stdout or Buffer..."""
+		try:
+			return self.__writer
+		except:
+			self.__writer = None
+			return self.__writer
+	
+	@property
+	def newl(self):
+		"""
+		Return character sequence for new-line. This must consist of
+		one of the following: ["\n", "\r\n", or "\r\n"].
+		"""
+		try:
+			return self.__newl
+		except:
+			self.__newl = "\r\n"
+			return self.__newl
+	
+	
 	
 	# ---- orisc -----
 	
+	#
 	# OPEN
+	#
 	def open(self):
 		"""
 		Called by run() if self.active is False.
@@ -216,67 +304,160 @@ class Runner(EncodingHelper):
 		self.__active = True
 	
 	
+	#
 	# RUN
+	#
 	def run(self):
-		"""Loop, calling self.io(), while self.running is True."""
-		#
-		# All of this exists in case Runner is running in the main thread.
-		# The code must be duplicated in start/CallIO when threaded using
-		# the `Runner.start` method. 
-		#
+		"""
+		Loop while self.running is True, calling 	`urgent()` and `io()`,
+		and `cio()` when a control port is specified.
+		
+		The `io` method is not called when Runner.pause() returns True.
+		"""
+		
+		# prepare for run by calling open()
 		if not self.active:
 			self.open()
 		
+		# mark object as running
 		self.__running = True
-		while self.__running:
-			self.io()
-			self.sleep(self.sleep)
 		
+		# Call self.cio() only in cases where event loop if a control 
+		while self.__running:
+			try:
+				self.__io()
+				if self.csock:
+					self.cio()
+				time.sleep(self.sleep)
+			except KeyboardInterrupt:
+				pass
+		
+		# Once processing is finished, `close()` and `stop()`.
 		if self.active:
 			self.shutdown()
 	
 	
-	# IO
+	#
+	# IO 
+	#  - The real io() method must be overridden to perform the 
+	#    functionality for which the subclass is intended.
+	#
+	def __io(self):
+		"""
+		Call io(). Additional features are coming soon to this method.
+		For now, it simply calls self.io().
+		"""
+		self.io()
+		
 	def io(self):
-		"""Override this method to perform repeating tasks."""
-		if self.csock:
-			
-			# read the control socket and feed data to the line queue
-			c = self.csock.read()
-			self.__lineq.feed(c)
-			
-			# read and handle lines from controlling process
-			q = self.__lineq.readline()
-			while q:
-				# get query response
-				r = self.query(q)
-				
-				# package and send reply
-				if not r:
-					r = dict(query=q, reply=None, error='unknown-query')
-				
-				# write the query back to the caller
-				self.csock.writeline(self.__jformat(r))
-				
-				# read another line (returns None when done)
-				q = self.__lineq.readline()
+		"""
+		For a Runner object, this method dose absolutely nothing. All
+		subclasses must override this method to perform repeating tasks
+		once for each pass through `io()`.
+		
+		IMPORTANT: Never use `print()` to print output from the `io` 
+		           method. Always use the `write` or `writeline` methods.
+		           Forthcoming features make this rule very important.
+		"""
+		pass
 	
 	
+	#
 	# STOP
+	#
 	def stop(self):
 		"""Stop the run loop."""
 		self.__running = False
 		self.__threaded = False
 	
 	
+	#
 	# CLOSE
+	#
 	def close(self):
 		"""
 		This placeholder is called on object deletion. It may be called
 		anytime manually, but you should probably call .stop() first if
-		the object is running. Some classes may call .close() in .stop().
+		the object is running. Subclasses may call `close()` inside the
+		`stop()`. 
+		
+		In any case, it's very important to call Runner.close() from
+		subclasses so that the active flag will be set to false.
 		"""
 		self.__active = False
+	
+	
+	#
+	# WRITE
+	#  - Never print from runner - use the write or writeline methods.
+	#
+	def write(self, text):
+		"""
+		Write text to the output stream, which defaults to sys.stdout.
+		"""
+		self.__writer.write(text)
+	
+	def writeline(self, text):
+		"""
+		Write a line of text to the output stream, which defaults to 
+		sys.stdout. This method appends self.newl to the text before
+		writing.
+		"""
+		self.__writer.write(text + self.newl)
+	
+	
+	
+	# ---- handle CPORT socket queries -----
+	
+	# CPORT-IO
+	def cio(self):
+		"""
+		This is called regularly, regardless of pause-state, when a
+		remote socket controls cport.
+		"""
+		
+		# read the control socket and feed data to the line queue
+		c = self.csock.read()
+		self.__lineq.feed(c)
+		
+		# read and handle lines from controlling process
+		q = self.__lineq.readline()
+		while q:
+			# get query response
+			r = self.query(q)
+			
+			# package and send reply
+			if not r:
+				r = dict(query=q, reply=None, error='unknown-query')
+			
+			# write the query back to the caller
+			self.csock.writeline(self.__jformat(r))
+			
+			# read another line (returns None when done)
+			q = self.__lineq.readline()
+		
+	
+	# QUERY
+	def query(self, q):
+		"""
+		Answer a query from a controlling process. Responses are always
+		sent as JSON dict strings.
+		
+		Override this method in subclasses that can run in an external
+		process, adding commands your class should respond to.
+		"""
+		if q:
+			q = q.strip()
+			if q == 'ping':
+				return dict(query=q, reply='pong')
+			elif q == 'status':
+				return dict(query=q, reply=self.status())
+			elif q == 'shutdown':
+				# stop, returning the new status
+				self.stop()
+				r = dict(query=q, reply=self.status())
+				return r
+	
 	
 	
 	# ---- utility -----
@@ -285,14 +466,16 @@ class Runner(EncodingHelper):
 	def start(self):
 		"""Start running in a new thread."""
 		try:
-			trix.start(self.io)
+			trix.start(self.run)
 			self.__threaded = True
 		except Exception as ex:
 			msg = "err-runner-except;"
 			trix.log(msg, str(ex), ex.args, type=type(self), xdata=xdata())
 			self.stop()
 			raise
-			
+	
+	
+	# STARTS - Start and return self
 	def starts(self):
 		"""Start running in a new thread; returns self."""
 		self.start()
@@ -316,13 +499,15 @@ class Runner(EncodingHelper):
 	def status(self):
 		"""Return a status dict."""
 		return dict(
-			ek = self.ek,
-			active = self.active,
-			running = self.running,
-			threaded= self.threaded,
-			sleep   = self.sleep,
-			config  = self.config,
-			cport   = self.__cport
+			ek       = self.ek,
+			active   = self.active,
+			running  = self.running,
+			threaded = self.threaded,
+			writer   = self.writer,
+			paused   = self.paused(),
+			sleep    = self.sleep,
+			config   = self.config,
+			cport    = self.__cport
 		)
 	
 	
@@ -330,29 +515,5 @@ class Runner(EncodingHelper):
 	def display(self):
 		"""Print status."""
 		trix.display(self.status())
-	
-	
-	# ---- handle CPORT socket queries -----
-	
-	# QUERY
-	def query(self, q):
-		"""
-		Answer a query from a controlling process. Responses are always
-		sent as JSON dict strings.
-		
-		Override this method in subclasses that can run in an external
-		process, adding commands your class should respond to.
-		"""
-		if q:
-			q = q.strip()
-			if q == 'ping':
-				return dict(query=q, reply='pong')
-			elif q == 'status':
-				return dict(query=q, reply=self.status())
-			elif q == 'shutdown':
-				# stop, returning the new status
-				self.stop()
-				r = dict(query=q, reply=self.status())
-				return r
 	
 
