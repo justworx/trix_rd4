@@ -11,7 +11,6 @@ except:
 	import _thread as thread
 
 
-
 #
 # VERSION
 #  - The official version of the `trix` package is currently
@@ -70,6 +69,18 @@ class trix(object):
 	__mm = sys.modules
 	
 	Logging = 0 #-1=print; 0=None; 1=log-to-file
+	
+	
+	# ---- new - experimental -----
+	
+	@classmethod
+	def signals(cls):
+		try:
+			return cls.__signals
+		except:
+			cls.__signals = trix.nvalue("util.signals.Signals")
+			return cls.__signals
+	
 	
 	# ---- object creation -----
 	
@@ -664,25 +675,6 @@ class trix(object):
 		"""
 		return xdata(cls, data, **k)
 	
-	"""
-	#
-	# ------------------- X -------------------
-	#
-	# EXPERIMENTAL
-	#  - Playing around with signal handling.
-	#
-	@classmethod
-	def signals(cls, signal, action):
-		#
-		# UNDER CONSTRUCTION - Going to use the new util.signals feature.
-		#
-		try:
-			xhandler = trix.create('signal.signal', signal)
-			cls.__sighist[signal].append(xhandler)
-		except AttributeError:
-			cls.__sighist = trix.ncreate('util.bag.Bag', list)
-			cls.__sighist[signal].append(signal.signal(signal, action))
-	"""
 	
 	
 	# ---- LOGGING -----
@@ -954,7 +946,7 @@ def debug_hook(t, v, tb):
 			
 			# KEYBOARD ERROR
 			if isinstance(v, KeyboardInterrupt):
-				print ("\n\n", t, "\n\n")
+				print ("\n", t, "\n\n")
 
 			else:
 				print (t)
@@ -1042,4 +1034,11 @@ class Debug(object):
 if AUTO_DEBUG:
 	Debug.debug(1,1)
 
+
+#
+# SIGNAL HANDLING
+#
+
+from trix.util import runner
+trix.signals().add(2, runner.Runner.on_signal, transparent=True)
 
