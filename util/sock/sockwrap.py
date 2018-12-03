@@ -21,7 +21,6 @@ class SockFatal(SockError): pass
 # I don't really know how to guess the best values for general use.
 #
 DEF_BUFFER = 4096       
-DEF_LINEEND = "\r\n"
 
 
 class sockwrap(sockconf, EncodingHelper, sockprop):
@@ -63,7 +62,7 @@ class sockwrap(sockconf, EncodingHelper, sockprop):
 		# be ignored by server sockets).
 		#
 		self.__buflen = self.config.get('buflen', DEF_BUFFER)
-		self.__newl = self.config.get('newl', DEF_LINEEND)
+		self.__newl = self.config.get('newl', DEF_NEWL)
 		
 		# init encoding
 		k.setdefault('encoding', DEF_ENCODE)
