@@ -4,7 +4,7 @@
 # of the GNU Affero General Public License.
 #
 
-import signal
+import signal, trix
 
 
 class Signals(object):
@@ -60,7 +60,13 @@ class Signals(object):
 			# that either `self.__signals` or `fn` does not exist... which
 			# is the effect we're looking for anyway.
 			pass
-
+	
+	#
+	# TEMPORARY - FOR DEBUGGING
+	#
+	@classmethod
+	def DEBUG_signals(cls):
+		return cls.__signals
 
 
 
@@ -165,20 +171,28 @@ class Signal(object):
 		if self.__handlers:
 			#
 			# Call each signal handler function. Store any handler that
-			# fails, and call its remove method.
+			# fails (in rmvlist) and call its remove method.
 			#
-			rmvlist = []
-			for handler in self.__handlers:
-				try:
-					handler(signal, stackframe)
-				except:
-					# add failed handler to the remove list
-					rmvlist.append(handler)
-			
-			# remove any handler that caused an exception
-			for handler in rmvlist:
-				self.__handlers.remove(handler)
-		
+			try:
+				rmvlist = []
+				for handler in self.__handlers:
+					try:
+						handler(signal, stackframe)
+					except BaseException as ex:
+						# add failed handler to the remove list
+						rmvlist.append(handler)
+						raise type(ex)("err-signal-handler", trix.xdata(
+								signal=signal, stackframe=stackframe, 
+								result="signal-handler-removed"
+							))
+			except:
+				# remove any handler that caused an exception
+				for handler in rmvlist:
+					self.__handlers.remove(handler)
+				
+				raise
+				
+				
 		if self.__transparent:
 			self.prior(signal, stackframe)
 		elif not self.__handlers and not self.__suppression:
