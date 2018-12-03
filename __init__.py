@@ -29,11 +29,21 @@ AUTO_DEBUG = True
 
 #
 # DEF_ENCODE
-#  - The default encoding for the trix package is UTF_8. It's the
-#    value trix will use when no other value is available for 
-#    encoding/decoding bytes.
+#  - The default encoding for the trix package is now determined by
+#    sys.getdefaultencoding(). I don't know if that method can fail,
+#    but if it does, 'utf_8' is used as a backup.
+#  - This change is experimental. DEF_ENCODE used to be set directly
+#    to 'utf_8'. I don't expect this to cause any problems, but in
+#    the event it does, I'll switch back to a hard-coded default of
+#    'utf_8'.
 #
-DEF_ENCODE = 'utf_8'
+DEF_ENCODE = sys.getdefaultencoding() or 'utf_8'
+
+#
+# DEF_NEWL
+#  - The default newline sequence.
+#
+DEF_NEWL = '\r\n'
 
 #
 # CONFIG / CACHE
@@ -71,17 +81,6 @@ class trix(object):
 	Logging = 0 #-1=print; 0=None; 1=log-to-file
 	
 	
-	# ---- new - experimental -----
-	
-	@classmethod
-	def signals(cls):
-		try:
-			return cls.__signals
-		except:
-			cls.__signals = trix.nvalue("util.signals.Signals")
-			return cls.__signals
-	
-	
 	# ---- object creation -----
 	
 	# INNER PATH	
@@ -91,8 +90,8 @@ class trix(object):
 		Prefix `innerPath` with containing packages.
 		
 		Return a string path `innerPath` prefixed with any packages that
-		contain this module. If the optional `innerPath` is None, the path
-		to (and including) this package is returned.
+		contain this module. If the optional `innerPath` is None, the 
+		path to (and including) this package is returned.
 		
 		>>> trix.innerpath("app.console")
 		"""
@@ -131,7 +130,6 @@ class trix(object):
 		except KeyError:
 			__import__(path)
 			return cls.__mm[path]
-				
 	
 	
 	# N-MODULE
@@ -455,21 +453,24 @@ class trix(object):
 		return m.Popen(*a, **k)
 	
 	
-	
-	# ---- general -----
-	
 	# START - Start new thread 
 	@classmethod
 	def start (cls, x, *a, **k):
 		"""
-		Start executable object `x` in a new thread, passing any given 
+		Start callable object `x` in a new thread, passing any given 
 		*args and **kwargs.
 		
 		>>> def test(): print("Testing 1 2 3");
 		>>> trix.start(test)
 		"""
-		thread.start_new_thread(x, a, k)
+		try:
+			thread.start_new_thread(x, a, k)
+		except:
+			pass
 	
+	
+	
+	# ---- general -----
 	
 	# PROXIFY
 	@classmethod
@@ -502,6 +503,7 @@ class trix(object):
 		except TypeError:
 			k.setdefault('encoding', DEF_ENCODE)
 			return json.loads(jsonstr.decode(**k))
+	
 	
 	# J-CONFIG
 	@classmethod
@@ -565,6 +567,7 @@ class trix(object):
 		except:
 			pass
 		return dict([[k,d[k]] for k in keys if k in d])
+	
 	
 	# K-POP
 	@classmethod
@@ -643,7 +646,9 @@ class trix(object):
 	@classmethod
 	def display(cls, data, *a, **k):
 		"""
-		Print python data (dict, list, etc...) in display format.
+		Print python data (dict, list, etc...) in, by default, display 
+		format. See `trix.formatter()` and various trix.fmt package doc
+		for details on required and optional args/kwargs. 
 		
 		>>> trix.display({'a':1, 'b':9, 'c':4})
 		"""
@@ -745,6 +750,19 @@ class trix(object):
 		"""
 		return cls
 	
+	
+	
+	# --------- new - experimental ---------
+	
+	@classmethod
+	def signals(cls):
+		"""Manage the handling of signals. See trix.util.signals."""
+		try:
+			return cls.__signals
+		except:
+			cls.__signals = trix.nvalue("util.signals.Signals")
+			return cls.__signals
+
 
 
 #
@@ -774,6 +792,7 @@ pid        = trix.pid
 popen      = trix.popen
 process    = trix.process
 proxify    = trix.proxify
+signals    = trix.signals
 start      = trix.start
 tracebk    = trix.tracebk
 trixc      = trix.trixc
@@ -1033,12 +1052,4 @@ class Debug(object):
 
 if AUTO_DEBUG:
 	Debug.debug(1,1)
-
-
-#
-# SIGNAL HANDLING
-#
-
-from trix.util import runner
-trix.signals().add(2, runner.Runner.on_signal, transparent=True)
 
