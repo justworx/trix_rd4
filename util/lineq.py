@@ -5,7 +5,7 @@
 #
 
 from .xqueue import Queue, Empty
-from .enchelp import EncodingHelper, DEF_ENCODE
+from .enchelp import EncodingHelper, DEF_ENCODE, DEF_NEWL
 
 
 class LineQueue(EncodingHelper):
@@ -26,7 +26,7 @@ class LineQueue(EncodingHelper):
 		self.__q = k.get('queue') or Queue()
 		
 		# set up the queue and newline-related values
-		self.__newl = self.decode(k.get('newl', '\r\n'))
+		self.__newl = self.decode(k.get('newl', DEF_NEWL))
 		"""
 		#
 		# This commented bit is being handled by the above line...
