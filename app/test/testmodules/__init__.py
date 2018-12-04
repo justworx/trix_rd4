@@ -76,10 +76,9 @@ assert(Mime("test.txt").guess == ('text/plain', None))
 #
 
 #
-# UTIL RUNNER and UTIL.PROCESS 
-#  - I can't really test these right now. Runner needs a rewrite.
-#  - I don't think Process can be tested at all until Server and 
-#  - Connect are available.
+# UTIL.PROCESS 
+#  - util.process will have to be tested in combination with the
+#    net.server/net.connect tests.
 #
 
 #
@@ -90,13 +89,14 @@ assert(Mime("test.txt").guess == ('text/plain', None))
 
 #
 # X-INPUT
-#  - Due to its pnature, this is not prone to automatic testing.
+#  - Due to its nature, this is not prone to automated testing.
 #
 
 #
 # X-INSPECT
 #  - The testing of this will be part of the 'util.wrap' testing,
-#    or vice-versa.
+#    or vice-versa. Some testing of Wrap/Inspect functionality is
+#    implicit in the util_runner test... it's incomplete, though.
 #
 
 #
