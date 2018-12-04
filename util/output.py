@@ -12,7 +12,7 @@ class Output(EncodingHelper):
 	"""Output management."""
 	
 	# default pause-buffer size: 16K
-	PauseBuffer = 2**14
+	PauseBufferSz = 2**14
 	
 	def __init__(self, config=None, **k):
 		"""
@@ -39,7 +39,7 @@ class Output(EncodingHelper):
 		config.setdefault("errors", "replace")
 		
 		# defaults for Buffer
-		config.setdefault("bufsz", self.PauseBuffer)
+		config.setdefault("bufsz", self.PauseBufferSz)
 		
 		# config for Output
 		self.__newl = config.get('newl', DEF_NEWL)
@@ -50,12 +50,13 @@ class Output(EncodingHelper):
 		# create buffer for paused buffering
 		self.__buffer = Buffer(**self.__config)
 		self.__writer = self.buffer.writer()
-		self.__output = sys.stdout
+		self.__output = config.get("output", sys.stdout)
 	
 	
 	
 	def __del__(self):
 		self.__buffer = None
+	
 	
 	
 	@property
