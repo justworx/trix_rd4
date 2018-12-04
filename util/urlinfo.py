@@ -162,11 +162,15 @@ class urlinfo(object):
 	
 	@property
 	def username(self):
-		return self.__dict.get('user')
+		return self.__dict.get('username')
 	
 	@property
 	def password(self):
-		return self.__dict.get('pass')
+		return self.__dict.get('password')
+	
+	@property
+	def netloc(self):
+		return self.__dict.get('netloc')
 	
 	@property
 	def host(self):
