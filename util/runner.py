@@ -424,11 +424,9 @@ class Runner(Output):
 	# ---- callbacks -----
 	
 	def on_pause(self):
-		print ("%s: Paused" % self.name) #debug
 		pass
 	
 	def on_resume(self):
-		print ("%s: Resume" % self.name) #debug
 		pass
 	
 	
