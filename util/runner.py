@@ -486,4 +486,20 @@ class Runner(Output):
 		"""Print status."""
 		trix.display(self.status())
 	
+	
+	
+	#
+	# EXPERIMENTAL
+	#  - Try a console
+	#
+	def console(self):
+		# REM: pause and resume are classmethods
+		if self.paused():
+			trix.ncreate("x.console.Console").console()
+		else:
+			try:
+				self.pause()
+				trix.ncreate("x.console.Console").console()
+			finally:
+				self.resume()
 
