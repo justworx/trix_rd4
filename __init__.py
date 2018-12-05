@@ -531,8 +531,6 @@ class trix(object):
 		default = k.get('default', cls.npath(k.get('ndefault')).path)
 		k['default'] = default
 		
-		#trix.display({"trix-DEFAULT:":default,'filepath':filepath,'k':k})
-		
 		# This should protect against most (if not all) unintentional
 		# overwriting of the default file.
 		if default and (default == filepath):
