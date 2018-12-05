@@ -17,11 +17,19 @@ class Dir(Plugin):
 		'mv'   : lambda d,*a: d.mv(*a)
 	}
 	
-	def __init__(self, pname, owner, config, **k):
+	def __init__(self, pname, owner, config=None, **k):
+		config = config or {}
+		config.update(k)
 		Plugin.__init__(self, pname, owner, config, **k)
 		
 		p = config.get('path', '.')
 		self.__dir = trix.path(p).dir()
+	
+	
+	@property
+	def dir(self):
+		"""Return the dir object."""
+		return self.__dir
 	
 	
 	#
