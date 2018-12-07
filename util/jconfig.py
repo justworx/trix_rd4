@@ -269,8 +269,6 @@ class JConfig(EncodingHelper):
 			if self.default:
 				k.setdefault('affirm', 'touch') 
 			
-			#print("jconfig-DEFAULT (k):", self.default, k)
-			
 			# 1 - read file at `self.path`
 			TXT = Path(self.path, **k).reader(**k).read()
 			

@@ -313,6 +313,21 @@ class LineEvent(Event):
 		
 		except Exception as ex:
 			raise type(ex)(xdata(line=commandline, args=a, r=r))
+	
+	@property
+	def text(self):
+		"""
+		A list of arguments as given to the constructor, but with each
+		item having been coerced to strings. 
+		"""
+		try:
+			return self.__text
+		except:
+			args = []
+			for a in self.argv:
+				args.append(str(a))
+			self.__text = " ".join(args)
+			return self.__text
 
 
 
