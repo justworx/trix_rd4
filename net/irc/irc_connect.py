@@ -270,7 +270,7 @@ class IRCConnect(Connect):
 			if self.__paused:
 				self.__pwriter.write(e.line + "\r\n")
 			else:
-				print (e.line)
+				Output.writeline(self, e.line)
 		
 		# HANDLE! Let each plugin handle each event (but not PINGs)
 		for pname in self.plugins:
@@ -281,40 +281,6 @@ class IRCConnect(Connect):
 				msg = "Error: %s %s" % (str(type(ex)), str(ex))
 				irc.debug(msg)
 				p.reply(e, msg)
-	
-	
-	
-	#
-	# PAUSE
-	#
-	def pause(self):
-		"""Pause display of received lines."""
-		self.__paused = True
-		self.__pbuffer = trix.ncreate(
-				'util.stream.buffer.Buffer', **self.ek
-			)
-		self.__pwriter = self.__pbuffer.writer()
-	
-	
-	
-	
-	#
-	# RESUME
-	#
-	def resume(self):
-		"""
-		Print any lines received while paused, the resume the previous
-		mode of display.
-		"""
-		try:
-			if self.show or self.debug:
-				lines = self.__pbuffer.read().splitlines()
-				for line in lines:
-					print(line)
-		finally:
-			self.__paused = False
-			self.__pbuffer = None
-			self.__pwriter = None
 	
 	
 	
