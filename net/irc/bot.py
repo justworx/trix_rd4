@@ -58,7 +58,7 @@ class Bot(Client):
 		#
 		
 		#
-		# Use the `trix.app.jconfig` class to manage the config file.
+		# Use the `trix.util.jconfig` class to manage the config file.
 		#	Load the config file at '~/.config/trix/irc/bots/<BOTID>.json'
 		#
 		self.__pconfig = BOT_CONFIG + "%s.json" % self.__botname

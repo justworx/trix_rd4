@@ -5,9 +5,9 @@
 #
 
 
-from . import *
-from ...app.event import *
 import re
+from . import *
+from ...util.event import *
 
 
 
@@ -41,8 +41,8 @@ class IRCEvent(TextEvent):
 	
 	def __init__(self, line_text):
 		"""
-		Parse a single line of as received from the server into the
-		appropriate member variables.
+		Parses a single line of text as received from an irc server and
+		populates the appropriate member variables of this object.
 		"""
 		# always strip the line for irc text
 		line = line_text.strip()
