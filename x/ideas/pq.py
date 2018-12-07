@@ -77,13 +77,24 @@ class pq(Wrap):
 		"""
 		Passes a data Param to executable `fn` for each item. Stores a
 		list of results and returns that list wrapped as a pq object.
+		
+		# find all Runner methods
+		from trix.x.ideas.pq import *
+		from trix.x.runner import *
+		from trix.util.wrap import *
+		
+		r = Runner()
+		w = Wrap(r)
+		
+		mm = list(w.i.methods.keys())
+		mq = pq(mm).select(lambda p: p.v and p.v[0] != '_')
+		trix.display(mq(sorted), f='Table', width=7)
 		"""
-		c = Cursor(self.o)
+		c = Cursor(self.o, use=fn)
 		try:
 			r = []
 			while True:
-				c.fetch()
-				r.append(fn(c.fetch.param, *a, **k))
+				r.append(c.fetch())
 		except StopIteration:
 			pass
 		return pq(r)
