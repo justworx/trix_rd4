@@ -5,10 +5,10 @@
 #
 
 
+from ..util.event import *
 from ..util.runner import *
-from ..util.xqueue import *
 from ..util.wrap import *
-from .event import *
+from ..util.xqueue import *
 
 
 SERVICES_NCONFIG = "app/config/service/en.service.conf"
