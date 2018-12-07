@@ -36,7 +36,11 @@ class Calc(Plugin):
 			#
 			self.reply(e, self.__calc(e))
 			
-			# The command's been handled, so return immediately.
+			# Either the command is invalid (AttributeError) or it's an
+			# equation that's been solved by __calc (and even if that
+			# raised an error, it should be ignored. Either way, the
+			# there's no need to proceed with the rest of this, so return
+			# immediately regardless of the solution/error.
 			return
 		
 		#
@@ -44,7 +48,7 @@ class Calc(Plugin):
 		# normally - the old-fashioned way - with all args being string.
 		#
 		try:
-			# make a list of arguments
+			# make a list of arguments as type str
 			args = []
 			for a in e.argvl:
 				args.append(str(a))
@@ -52,7 +56,24 @@ class Calc(Plugin):
 			
 			# MATH
 			if cmd in ['calc', 'calculate']:
-				self.reply(e, str(matheval(' '.join(args[1:]))))
+				#
+				# In this case, the command "calc" has been issued explicitly
+				# so we definitely must raise any errors in calculation.
+				#
+				try:
+					self.reply(e, str(matheval(' '.join(args[1:]))))
+				except BaseException as ex:
+					self.error(
+							e, type=type(ex), error=str(ex), tb=trix.tracebk(),
+							xdata=xdata()
+						)
+				
+				#
+				# AND... weird as it may seem, the next "if" clause must not
+				#        be "elif"... I forgot why, but if you care enough,
+				#        just go right ahead and trace through the code to
+				#        figure out why.
+				#
 				return
 			
 			
@@ -61,6 +82,7 @@ class Calc(Plugin):
 				try:
 					ctemp = Convert().temp(cmd[2], cmd[0], float(e.argv[1]))
 					self.reply(e, str(ctemp)+cmd[2].upper())
+					return
 				except:
 					pass
 			
@@ -106,15 +128,16 @@ class Calc(Plugin):
 			#    have to do the eval here.
 			#  - This wasn't handled above because the first part of the
 			#    equation is a string (eg, a variable or math function).
-			#
-			"""
-			#
-			# I need to figure a way to do this passive stuff without
-			# breaking everything.
+			#  - And again, `raise_errors` should not be passed as true
+			#    because without the explicit "calc" command, we can't be
+			#    sure that whatever it is that triggered the error was 
+			#    actually intended to be part of a matheval calculation.
+			#    (It might be something that makes sense to some other
+			#     plugin that hasn't yet had a chance to execute.)
 			#
 			if not e.reply:
 				self.reply(e, self.__calc(e))
-			"""
+			
 				
 		except Exception as ex:
 			
@@ -122,14 +145,30 @@ class Calc(Plugin):
 			typ = str(type(ex))
 			err = str(ex)
 			
-			# interpreter debugging
-			self.debug("command plugin error", typ, err)
-			
 			# reply debugging
 			msg = "%s: %s" % (str(typ), err)
-			self.reply(e, msg)
+			self.error(e, dict(
+					etype=typ, msg=msg, xdata=xdata(), tb=trix.tracebk(),
+					source="app.plugin.calc"
+				))
 			
-			#raise
+			raise
+			
+			#
+			# IN THE EVENT OF ERRORS!
+			# 
+			# WE CAN'T RAISE ERRORS HERE BECAUSE THEY WOULD DISRUPT OTHER
+			# PLUGINS THAT MIGHT BE ABLE TO MAKE SENSE OF WHATEVER THE 
+			# INPUT IS.
+			# 
+			# If you spot an error specific to this plugin, check the
+			# `e.error` property on return - this should give you fairly
+			# extensive exception information.
+			#
+			# (Yes, I just spent a lot of time debugging something and,
+			#  when done fixing the problem, realized this would really
+			#  have helped a lot!)
+			#
 	
 	
 	
@@ -137,11 +176,28 @@ class Calc(Plugin):
 	#
 	# CALC - Calculate equation result
 	#
-	def __calc(self, e):
-		args = []
-		for a in e.argv:
-			args.append(str(a))
-		return matheval(" ".join(args))
+	def __calc(self, e, raise_errors=False):
+		try:
+			args = []
+			for a in e.argv:
+				args.append(str(a))
+			return matheval(" ".join(args))
+		except Exception as ex:
+			#
+			# This error must be ignored by "auto" calculating, else
+			# every line typed (other than valid math equations) would 
+			# raise errors!
+			# 
+			# HOWEVER...
+			# If the command calc was given, we must raise errors, so
+			# the calc.handle method must pass err=True..
+			#
+			if raise_errors:
+				raise type(ex)("invalid-equation", xdata(
+						source="trix.app.plugin.calc", method="__calc",
+						text=" ".join(args)
+					))
+		
 	
 	
 	
