@@ -515,7 +515,7 @@ class trix(object):
 		`filepath`. Use `ndefault` kwarg instead for the internal path
 		(within the trix directory) to a default file.
 		
-		An `app.JConfig` object is returned.
+		A `util.JConfig` object is returned.
 		
 		NOTES:
 		 * The default path should point to a static default config file
@@ -537,7 +537,7 @@ class trix(object):
 			raise ValueError("Matching target and default paths.", xdata(
 					default=default, filepath=filepath, k=k
 				))
-		m = cls.nmodule("app.jconfig")
+		m = cls.nmodule("util.jconfig")
 		return m.JConfig(filepath, **k)
 	
 	
