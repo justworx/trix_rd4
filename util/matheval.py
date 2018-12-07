@@ -93,9 +93,9 @@ def __eval(node, vars, fn):
 				__eval(node.right, vars, fn)
 			)
 		else:
-			raise ValueError("invalid-binary-op", {
-				'op': (type(node.op).__name__)
-			})
+			raise ValueError("matheval-invalid-binary-op", xdata(
+					op=type(node.op).__name__
+				))
 	
 	# UNARY OP:
 	elif isinstance(node, ast.UnaryOp):
@@ -103,9 +103,9 @@ def __eval(node, vars, fn):
 		if op_type in MATH_UOPS:
 			return MATH_UOPS[op_type](__eval(node.operand, vars, fn))
 		else:
-			raise ValueError("invalid-unary-op", {
-				'op': (type(node.op).__name__)
-			})
+			raise ValueError("matheval-invalid-unary-op", xdata(
+					op=type(node.op).__name__
+				))
 	
 	#
 	# VARIABLES:
@@ -118,9 +118,9 @@ def __eval(node, vars, fn):
 		elif node.id in MATH_NAMES:
 			return MATH_NAMES[node.id]
 		else:
-			raise ValueError("invalid-variable", {
-				'var': node.id
-			})
+			raise ValueError("matheval-invalid-variable", xdata(
+					var=str(node.id)
+				))
 	
 	#
 	# STRING:
@@ -139,7 +139,9 @@ def __eval(node, vars, fn):
 	#
 	elif isinstance(node, ast.Call):
 		if not isinstance(node.func, ast.Name):
-			raise ValueError("invalid-function")
+			raise ValueError("matheval-unknown-function", xdata(
+					name=str(ast.Name), require=str(node.func)
+				))
 		
 		if node.func.id == MATH_FN_GOOD:
 			func = MATH_FN_GOOD[node.func.id]
@@ -148,9 +150,9 @@ def __eval(node, vars, fn):
 		elif not node.func.id in MATH_FN_BAD:
 			func = getattr(math, node.func.id, None)
 		if func is None:
-			raise ValueError("invalid-function", {
-				'fn': (node.func.id)
-			})
+			raise ValueError("matheval-invalid-function", xdata(
+					name=node.func.id, value=None
+				))
 		
 		if node.args is not None:
 			args = [__eval(v, vars, fn) for v in node.args]
@@ -159,7 +161,7 @@ def __eval(node, vars, fn):
 		return func(*args)
 	
 	else:
-		raise ValueError("invalid-node-type", xdata(
+		raise ValueError("matheval-invalid-node-type", xdata(
 			nodetype=type(node).__name__
 		))
 
