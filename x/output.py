@@ -8,13 +8,16 @@ from ..util.enchelp import * # trix, sys
 from ..util.signals import *
 from ..util.stream.buffer import *
 
+
+# ------------------------------------------------------------------
 #
-# BASE OUTPUT - Non-pause-able output handler.
+# BASE OUTPUT - Non-pauseable output handler.
 #
+# ------------------------------------------------------------------
 class BaseOutput(EncodingHelper):
 	"""
 	Provides the basic output mechanism required by Output and by the
-	app/Console class.
+	util/Console class.
 	
 	BaseOutput has no awareness of the pause status - it always write
 	when write is called, regardless of the value of Output.pause().
@@ -52,8 +55,18 @@ class BaseOutput(EncodingHelper):
 		self.__config = config
 		
 		# create buffer for paused buffering
-		self.__output = config.get("output", sys.stdout)
-		self.__writer = self.__output
+		self.__target = config.get("output", sys.stdout)
+		
+		# set writer to write to output
+		self.__writer = self.__target.write
+	
+	
+	
+	def __del__(self):
+		self.__writer = None
+		self.__target = None
+		self.__config = None
+	
 	
 	
 	@property
@@ -62,14 +75,14 @@ class BaseOutput(EncodingHelper):
 		return self.__config
 	
 	@property
-	def writer(self):
-		"""For BaseOutput, writer is the self.output."""
-		return self.__writer
+	def target(self):
+		"""The target stream that receives `output()` text."""
+		return self.__target
 	
 	@property
-	def output(self):
-		"""Instantly writes output regardless of pause status."""
-		return self.__output
+	def writer(self):
+		"""For BaseOutput, writer is the `self.target.write()`."""
+		return self.__writer
 	
 	@property
 	def newl(self):
@@ -79,30 +92,36 @@ class BaseOutput(EncodingHelper):
 	
 	
 	#
-	# WRITE-LINE
+	# OUTPUT
 	#
-	def writeline(self, text):
-		"""Write (or Buffer) text with newline appended."""
-		self.write(text + self.newl)
-	
-	#
-	# WRITE
-	#
-	def write(self, text):
-		"""Write (or Buffer) text, depending on pause status."""
+	def output(self, text, newl=None):
+		"""
+		Write text immediately to the `self.target` stream.
+		"""
 		
+		#
 		# BaseOutput always writes text immediately; there is no 
 		# awareness here of the pause status.
-		self.output.write(text)
+		#
+		# NOTE:
+		# - This is different from subclass `Output`, which buffers text
+		#   while pause status is True and only writes buffered text when
+		#   the pause status is False.
+		#
+		if newl != None:
+			self.writer(text + newl)
+		else:
+			self.writer("%s%s" % (text, self.newl))
 
-	
 
 
-#
+
+
+# ------------------------------------------------------------------
 #
 # OUTPUT - Pauseable output.
 #
-#
+# ------------------------------------------------------------------
 class Output(BaseOutput):
 	"""Management of "pausable" text output."""
 	
@@ -120,14 +139,14 @@ class Output(BaseOutput):
 		           buffer storage will resort to writing to disk.
 		"""
 		
-		BaseOutput.__init__(self, config, **k)
+		BaseOutput.__init__(self, config, **k) # <-- sets self.config
 		
 		# defaults for Buffer
-		config.setdefault("bufsz", self.PauseBufferSz)
+		self.config.setdefault("bufsz", self.PauseBufferSz)
 		
 		# create buffer for paused buffering
-		self.__buffer = Buffer(**self.__config)
-		self.__writer = self.buffer.writer()
+		self.__buffer = Buffer(**self.config)
+		self.__writer = self.buffer.writer().write
 	
 	
 	
@@ -146,14 +165,43 @@ class Output(BaseOutput):
 		return self.__writer
 	
 	#
+	# WRITE
+	#
+	def output(self, text, newl=None):
+		"""
+		Pause-aware output buffers text while paused; when not paused,
+		writes any buffered text, followed by the given `text`, to the
+		`self.target` stream (which defualts to sys.stdout, but can be
+		customized by passing a different stream - or any object with a
+		write method - using the __init__ method's "output" kwarg).
+		
+		New-line `newl` defaults to `self.newl` (which defaults to CRLF).
+		To write output without a newline sequence, pass newl='' (or any
+		character needed. The `self.newl` can also be customized by 
+		passing keyword argument "newl" to the constructor.
+		"""
+		
+		#
+		# REM `BaseOutput.output` is writing to `self.writer`, which is
+		#     a Buffer object, so when it's called here the text is NOT
+		#     actually written to the target stream. It's only when 
+		#     `self.flushbuffer()` is called that the text is actually
+		#     written to the true output stream (self.target).
+		#
+		BaseOutput.output(self, text, newl)
+		if not self.paused():
+			self.flushbuffer()
+	
+	
+	#
 	# FLUSH BUFFER
 	#
 	def flushbuffer(self):
 		"""
 		Write buffered content to output.
 		
-		This method is called by `self.write` before any text is written
-		to the output buffer.
+		This method is called by `Output.output` before any text is 
+		written to the output buffer.
 		
 		The `Output` class is not intended to be threaded, but does serve
 		as base for Runner and potentially other threadable classes that 
@@ -161,8 +209,8 @@ class Output(BaseOutput):
 		change is detected in the pause status.
 		"""
 		if self.buffer.tell():
-			self.output.write(self.buffer.read())
-			self.output.flush()
+			self.target.write(self.buffer.read())
+			self.target.flush()
 			self.buffer.seek(0)
 			self.buffer.truncate()
 	
@@ -172,7 +220,7 @@ class Output(BaseOutput):
 	# ---- pause/resume = class-level methods/values-----
 	#
 	#
-
+	
 	__interrupted = False
 	
 	@classmethod

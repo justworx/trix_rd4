@@ -4,9 +4,12 @@
 # the terms of the GNU Affero General Public License.
 #
 
-from ..x.output import * #trix,sys
+
+from ..x.output import * # trix, enchelp, sys
+from ..util.event import *
 from ..util.xinput import *
-from ..app.event import *
+from ..util.wrap import *
+
 
 #
 # ---- CONSOLE -----
@@ -15,21 +18,9 @@ from ..app.event import *
 class Console(BaseOutput):
 	"""
 	Base class for an interactive command-line user interface.
-	
-	UNDER CONSTRUCTION
-	 - This is a very early rewrite of the original (rd3) Console 
-	   class. Some (not much) of that original Console will be used 
-	   here, but the general scheme may turn out to be completely 
-	   different.
-	
-	NOTE:
-	 - Console accepts an 'output' kwarg for writing, but it must NOT
-	   be based on the Output class. There is no pausing the console!
-	
 	"""
 	
-	# This will be changed to False after initial development.
-	Debug = True 
+	Debug = 0 
 	
 	def __init__(self, config=None, **k):
 		
@@ -41,22 +32,20 @@ class Console(BaseOutput):
 		# debugging
 		self.__debug = config.get('debug', self.Debug)
 		
-		# plugins
-		self.__plugins = {}
-		self.__plugins['calc'] = trix.ncreate(
-				"app.plugin.calc.Calc", "calc", self, {}
-			)
-		self.__plugins['dir'] = trix.ncreate(
-				"app.plugin.dir.Dir", "dir", self, {}
-			)
+		# wrapper
+		self.__wrap = Wrap(config.get('wrap'))
+	
+	
+	
+	def __del__(self):
+		self.__wrap = None
 	
 	
 	
 	@property
 	def debug(self):
-		"""Console prompt."""
+		"""Debug setting."""
 		return self.__debug
-	
 	
 	@property
 	def jformat(self):
@@ -67,24 +56,42 @@ class Console(BaseOutput):
 			self.__jformat = trix.formatter(f='JDisplay')
 			return self.__jformat
 	
-	
 	@property
 	def prompt(self):
 		"""Console prompt."""
 		return "> "
-	
-	
-	@property
-	def plugins(self):
-		"""Return plugins dict."""
-		return self.__plugins
 
 	
 	
+	#
 	# BANNER
+	#
 	def banner(self):
 		"""Display entry banner."""
-		self.writeline("\n#\n# CONSOLE\n#\n")
+		self.output("\n#\n# CONSOLE\n", newl='')
+		
+		#
+		# Some of this needs to be transferred to a /help section.
+		# The command characters need to be configurable, and the
+		# msg (or help message) need to use the udb 'NAME' property
+		# to describe them (instead of, eg, "exclamation point" and 
+		# "forward-slash").
+		#
+		msg = """
+		-- THIS CLASS IS UNDER CONSTRUCTION! EXPECT CHANGES. --
+			
+			* Entered text will be sent to the target stream.
+			* Prefix Console commands with the forward-slash "/" 
+			  character.
+			* Commands prefixed with an exclamation point "!" 
+			  character are directed to the 'wrapped' object.
+			  This allows methods to be called and properties
+			  read and set.
+			* Ctrl-c to exit.
+		"""
+		ll = msg.splitlines()
+		for line in ll:
+			self.output("#  " + line.lstrip("\t"))
 	
 	
 	
@@ -98,14 +105,16 @@ class Console(BaseOutput):
 	
 	
 	#
-	# CONSOLE - Run the console.
+	#
+	# CONSOLE - Run the console (Loop)
+	#
 	#
 	def console(self):
 		"""Call this method to start a console session."""
 		self.banner()
 		self.__active = True
 		while self.__active:
-			evt=None
+			e=None
 			try:
 				# get input, create Event
 				line = xinput(self.prompt).strip()
@@ -113,63 +122,84 @@ class Console(BaseOutput):
 				# make sure there's some text to parse
 				if line:
 					# get and handle event
-					evt = self.create_event(line)
-					self.handle_input(evt)
+					if line[0] == '/':
+						# this is a command for the console object
+						e = self.create_event(line[1:])
+						self.handle_command(e)
+					elif line[0] == '!':
+						# this is a command for the wrapped object
+						e = self.create_event(line[1:])
+						self.handle_wrapper(e)
+					else:
+						e = self.create_event(line)
+						self.handle_input(e)
 			
 			except (EOFError, KeyboardInterrupt) as ex:
 				# Ctrl-C exits this prompt with EOFError; end the session.
 				self.__active = False
-				self.writeline("\n#\n# Console Exit\n#\n")
-				raise KeyboardInterrupt("end-console-session")
+				self.output("\n#\n# Console Exit\n#\n")
 			
 			except BaseException as ex:
-				#
-				# Handle other exceptions by displaying them
-				#
-				self.writeline('') # get off the "input" line
-				self.writeline("#\n# ERROR: %s\n#" % str(ex))
-				self.writeline(self.jformat(xdata()))
-		
-			
+				self.output('') # get off the "input" line
+				self.output("#\n# %s: %s\n#" % (type(ex).__name__, str(ex)))
+				if self.debug:
+					if e and e.error:
+						self.output(self.jformat(dict(event=e.dict,err=e.error)))
+					self.output(self.jformat(xdata))
+					#self.output(self.newl.join(trix.tracebk()))
+					self.output(self.jformat(trix.tracebk()))
 	
 	
-	# HANDLE INPUT
+	
+	
+	#
+	#
+	# ---- HANDLE INPUT, COMMANDS -----
+	#
+	#
+	
 	def handle_input(self, e):
-		"""Handle input event `e`."""
+		"""Send `e.text` to the target stream."""
+		self.output(e.text)
+	
+	
+	
+	
+	def handle_command(self, e):
+		"""
+		Handle input event `e`.
+		"""
+		if e.argvl[0] == 'debug':
+			if e.arg(1):
+				self.__debug = int(e.arg(1))
+			else:
+				self.output(str(self.__debug))
 		
-		if e.argc and e.argv[0]:
-			
-			#
-			# check plugins first
-			#
-			for p in self.__plugins:
-				self.__plugins[p].handle(e)
-				if e.reply:
-					self.writeline (str(e.reply))
-					return
-			
-			#
-			# handle valid commands...
-			#
-			
-			if e.argvl[0] == 'plugins':
-				# list plugin names
-				self.writeline(" ".join(self.plugins.keys()))
-			
-			elif e.argvl[0] == 'exit':
-				# leave the console session
-				self.__active = False
-			
-			#
-			# CHECK FIRST ARG!
-			#  - There's always at least one argument, even if it's ''.
-			#    In this case, nothing (or only white space) was entered,
-			#    so just hit the next line. Otherwise, it's an unknown 
-			#    command, so complain.
-			#
-			elif e.argvl[0]:
-				raise Exception(xdata(error="unknown-command", args=e.argv))
-
+		# exit the console session
+		elif e.argvl[0] == 'exit':
+			self.__active = False
+		
+		# leave the console session
+		elif e.argvl[0] in ['wrap', 'wrapper']:
+			wrap = type(self.__wrap.o).__name__
+			self.output("%s: %s" % (wrap, self.__wrap.name))
+	
+	
+	
+	
+	def handle_wrapper(self, e):
+		"""
+		Handle commands prefixed with the exclamation point '!' 
+		character - wrapped object commands.
+		
+		NOTE: Wrapper commands are case-sensitive.
+		"""		
+		if self.__wrap:
+			# wrapper commands are case-sensitive, so use e.arg(0)
+			r = self.__wrap(e.arg(0), *e.argv[1:], **e.kwargs)
+			if r:
+				self.output(str(r))
+	
 
 
 
