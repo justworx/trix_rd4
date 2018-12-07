@@ -4,10 +4,9 @@
 # of the GNU Affero General Public License.
 #
 
-from ..util.enchelp import * # trix
+from .output import * # trix, enchelp, sys
 from ..util.xthread import *
 from ..util.stream.buffer import *
-from .output import *
 
 DEF_SLEEP = 0.1
 
@@ -19,11 +18,17 @@ class Runner(Output):
 	through the loop.
 	
 	NOTE:
-	 - Always use base-class `Output` methods `write` and `writeline`
-	   to write data from within the `io()` method; this allows output 
-	   written when in a pause state to be buffered and then printed  
-	   later (when the pause state ends).
+	 - Always use base-class `Output.output()` method to write data 
+	   from within the `io()` method. This allows output written when 
+	   in a pause state to be buffered and then printed later (when 
+	   the pause state ends).
 	"""
+	
+	#
+	# CHANGE AFTER RELEASE : 'util.console.Console'
+	#
+	Console = trix.innerpath("x.console.Console")
+	
 	
 	# INIT
 	def __init__(self, config=None, **k):
@@ -90,25 +95,25 @@ class Runner(Output):
 		#
 		# running and communication
 		#
-		self.__sleep = config.get('sleep', DEF_SLEEP)
+		self.__sleep = self.config.get('sleep', DEF_SLEEP)
 		
 		# Let kwargs set the "name" property; otherwise name is generated
 		# on request of property `self.name`.
-		if 'name' in config:
-			self.__name = str(config['name'])
+		if 'name' in self.config:
+			self.__name = str(self.config['name'])
 		
 		#
 		# If CPORT is defined in config, connect to calling process.
 		#
-		if "CPORT" in config:
+		if "CPORT" in self.config:
 			#
 			# Set up for communication via socket connection.
 			#
 			self.__lineq = trix.ncreate('util.lineq.LineQueue')
-			self.__cport = p = config["CPORT"]
+			self.__cport = p = self.config["CPORT"]
 			self.__csock = trix.ncreate('util.sock.sockcon.sockcon', p)
 			try:
-				self.__csock.writeline("%i" % trix.pid())
+				self.__csock.output("%i" % trix.pid())
 			except Exception as ex:
 				trix.log("csock-write-pid", trix.pid(), type(ex), ex.args)
 				self.__csock = None
@@ -331,8 +336,9 @@ class Runner(Output):
 		once for each pass through `io()`.
 		
 		IMPORTANT: Never use `print()` to print output from the `io` 
-		           method. Always use the `write` or `writeline` methods.
-		           Forthcoming features make this rule very important.
+		           method. Always use the `output` method. Output appends
+		           self.newl by default - pass '' if you want to aviod
+		           auto-appended CR and/or LF.
 		"""
 		pass
 	
@@ -393,7 +399,7 @@ class Runner(Output):
 				r = dict(query=q, reply=None, error='unknown-query')
 			
 			# write the query back to the caller
-			self.csock.writeline(self.__jformat(r))
+			self.csock.output(self.__jformat(r))
 			
 			# read another line (returns None when done)
 			q = self.__lineq.readline()
@@ -493,13 +499,29 @@ class Runner(Output):
 	#  - Try a console
 	#
 	def console(self):
+		"""
+		Pause all Output and run a console session that wraps this 
+		object.
+		"""
 		# REM: pause and resume are classmethods
 		if self.paused():
-			trix.ncreate("x.console.Console").console()
+			self.__createconsole().console()
 		else:
 			try:
 				self.pause()
-				trix.ncreate("x.console.Console").console()
+				self.__createconsole().console()
 			finally:
 				self.resume()
+	
+	
+	def __createconsole(self):
+		try:
+			return self.__console
+		except:
+			self.__console = trix.create(
+					self.Console, self.config, wrap=self
+				)
+			return self.__console
+
+
 
