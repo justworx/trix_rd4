@@ -167,13 +167,20 @@ class udata(object):
 	
 		```
 		
-		The complete list of property names is:
+		The complete list of property names is: 
 		[
-			'char', 'c', 'block', 'bidi', 'bidirectional', 'bracket', 'cat',
-			'category', 'num', 'numeric', 'dec', 'decimal', 'dig', 'digit',
-			'name', 'props', 'properties', 'bidiname', 'catname', 'ord'
+			alpha             alphanum       bidi       bidiname
+			bidirectional     block          br         bracket 
+			brname            cat            category   catname 
+			combining         comma          connector  dec     
+			decimal           decomposition  dig        digit   
+			east_asian_width  lend           linebreak  lineend 
+			mirrored          name           num        numeric 
+			ord               properties     props      quote   
+			sep               space          ss         sub     
+			sup               tab            white              
 		]
-		
+			
 		Several of these are aliases (a space-saving measure for lambdas):
 		 - bidi = bidirectional
 		 - cat = category
@@ -182,6 +189,18 @@ class udata(object):
 		 - dig = digit
 		 - num = numeric
 		 - props = properties
+		
+		#
+		# The current list of charinfo properties can be obtained
+		# by running this little script:
+		#
+		```python3
+		from trix.util.wrap import *
+		from trix.data.udata.charinfo import *
+		w = Wrap(charinfo("x").next())
+		p = w.i.properties
+		trix.display(sorted([x for x in p]), f='Table', width=4)
+		```
 		
 		"""
 		return trix.ncreate('data.udata.query.query', **k)
