@@ -79,7 +79,10 @@ class Wrap(object):
 		elif key in self.i.functions:
 			return self.i.functions[key](*a, **k)
 		elif key in self.i.properties:
-			return self.i.properties[key].fget(self.o, *a)
+			try:
+				return self.i.properties[key].fget(self.o, *a)
+			except TypeError:
+				self.i.properties[key].fset(self.o, *a)
 		elif key in self.__keys:
 			return getattr(self.o, key)
 			return self.__attrs[self.__attrs.indexof(key)]
