@@ -470,25 +470,8 @@ class trix(object):
 	
 	
 	
-	# ---- general -----
 	
-	# PROXIFY
-	@classmethod
-	def proxify(cls, obj):
-		"""
-		Return a proxy for `obj`. If `obj` is already a proxy, returns
-		the proxy `obj` itself.
-		
-		>>> def test(): print("Testing 1 2 3");
-		>>> prxy = trix.proxify(test)
-		>>> prxy()
-		>>> trix.proxify(prxy)
-		"""
-		try:
-			return cls.create('weakref.proxy', obj)
-		except BaseException:
-			return obj
-	
+	# ---- config -----
 	
 	# J-PARSE
 	@classmethod
@@ -540,6 +523,10 @@ class trix(object):
 		m = cls.nmodule("util.jconfig")
 		return m.JConfig(filepath, **k)
 	
+	
+	
+	
+	# ---- general utility -----
 	
 	# K-COPY
 	@classmethod
@@ -598,22 +585,26 @@ class trix(object):
 		return r
 	
 	
+	# PROXIFY
+	@classmethod
+	def proxify(cls, obj):
+		"""
+		Return a proxy for `obj`. If `obj` is already a proxy, returns
+		the proxy `obj` itself.
+		
+		>>> def test(): print("Testing 1 2 3");
+		>>> prxy = trix.proxify(test)
+		>>> prxy()
+		>>> trix.proxify(prxy)
+		"""
+		try:
+			return cls.create('weakref.proxy', obj)
+		except BaseException:
+			return obj
+	
+	
 	
 	# ---- display/debug -----
-	
-	# DEBUG
-	@classmethod
-	def debug(cls, debug=True, showtb=True):
-		"""
-		Enable/disable debugging/traceback. This should pretty much be
-		left alone. The trix code is too convoluted to debug without it.
-		However, it's available if you want to turn it off. If debug is
-		set to False, normal python excpetion format is displayed (and
-		tracebacks won't be duplicated). When `debug` is on but `showtb`
-		is False, the extended exception format is still shown but the
-		trailing traceback is ignored.
-		"""
-		Debug.debug(debug,showtb)
 	
 	
 	# FORMATTER (default, JDisplay)
@@ -651,6 +642,21 @@ class trix(object):
 		>>> trix.display({'a':1, 'b':9, 'c':4})
 		"""
 		cls.formatter(*a, **k).output(data)
+	
+	
+	# DEBUG
+	@classmethod
+	def debug(cls, debug=True, showtb=True):
+		"""
+		Enable/disable debugging/traceback. This should pretty much be
+		left alone. The trix code is too convoluted to debug without it.
+		However, it's available if you want to turn it off. If debug is
+		set to False, normal python excpetion format is displayed (and
+		tracebacks won't be duplicated). When `debug` is on but `showtb`
+		is False, the extended exception format is still shown but the
+		trailing traceback is ignored.
+		"""
+		Debug.debug(debug,showtb)
 
 	
 	# TRACE-BK
@@ -678,9 +684,6 @@ class trix(object):
 		"""
 		return xdata(cls, data, **k)
 	
-	
-	
-	# ---- LOGGING -----
 	
 	# LOG
 	@classmethod
