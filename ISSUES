@@ -1,0 +1,17 @@
+
+
+
+PROCESS ERROR
+
+Process is failing on queries. The problem is almost certainly in 
+the Runner.cio() method.
+
+ * First check that the run method failing to call cio(),
+ * Check how the socket is preparing its response.
+
+I doubt it's in the Runner.query method, but that's possible.
+
+Check there are no calls to .output() anywhere in that area. I don't
+think that's possible, but who knows what I might type when I'm too
+sleepy?
+
