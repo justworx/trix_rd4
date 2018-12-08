@@ -16,7 +16,7 @@ class TestRunner(Runner):
 	
 	def io(self):
 		if self.test:
-			self.writeline(self.test)
+			self.output(self.test)
 			self.test = None
 	
 
