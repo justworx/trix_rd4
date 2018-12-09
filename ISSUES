@@ -1,17 +1,79 @@
 
 
+PREP TO HANDLE SIGHUP AND SIGTERM
 
-PROCESS ERROR
+The key here is to call shutdown for all Runner objects. They're
+the ones that could leave remote processes held open after the 
+main process dies, orphaning the subprocesses. A Runner.stopall() 
+classmethod would call all Runner objects shutdown methods, adding
+Runner objects on __init__ and removing on __del__.
 
-Process is failing on queries. The problem is almost certainly in 
-the Runner.cio() method.
+trix.signals(signals.SIGHUP, Runner.stopall)
+trix.signals(signals.SIGTERM, Runner.stopall)
 
- * First check that the run method failing to call cio(),
- * Check how the socket is preparing its response.
+NOTE: I don't know in what situations this would work, nor whether
+      it would work in any situation. I think it's worth a try to 
+      find out.
 
-I doubt it's in the Runner.query method, but that's possible.
 
-Check there are no calls to .output() anywhere in that area. I don't
-think that's possible, but who knows what I might type when I'm too
-sleepy?
+
+
+#
+# SERVER MESSAGES
+#
+
+Update this so that messages are written to a Buffer object, rather
+than being stored to a list. This feature was originally meant as a
+temporary debugging tool, but I think it could be a useful runtime
+debugging/logging feature.
+
+
+
+
+#
+# PROCESS TEST
+#
+
+Process works again. I'd sleepily changed the socket writeline calls
+to output(). *eyeroll*
+
+A test for the Process class might be buildable, starting with this
+code, below...
+
+```python3
+
+from trix import *
+p = trix.nprocess("net.server.Server", 0).launch('run')
+
+try:
+	status = p.rstatus()
+	pid = p.pid
+	port = status.get("reply", {}).get("server", {}).get("port")
+	
+	c = trix.ncreate("net.connect.Connect", port)
+	c.write("TEST\r\n")
+	
+	assert(c.read() == "TEST\r\n")
+
+finally:
+	p.shutdown()
+
+```
+
+
+# THINK ABOUT...
+
+# How about a `ps` classmethod in Process which would split the
+# result of... oh wait. What about Windows? UGH!
+
+
+
+#
+# ALSO...
+#
+It may be useful to make Process a contextmanager; have to think
+about this.
+
+
+
 
