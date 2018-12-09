@@ -8,8 +8,8 @@ main process dies, orphaning the subprocesses. A Runner.stopall()
 classmethod would call all Runner objects shutdown methods, adding
 Runner objects on __init__ and removing on __del__.
 
-trix.signals(signals.SIGHUP, Runner.stopall)
-trix.signals(signals.SIGTERM, Runner.stopall)
+trix.signals(signal.SIGHUP, Runner.stopall)
+trix.signals(signal.SIGTERM, Runner.stopall)
 
 NOTE: I don't know in what situations this would work, nor whether
       it would work in any situation. I think it's worth a try to 
@@ -61,19 +61,27 @@ finally:
 ```
 
 
+from trix import *
+p = trix.nprocess("net.server.Server", 0).launch('run')
+
+time.sleep(0.1)
+p.query('ping')
+
+p.shutdown()
+
+
+
+
+
+#
 # THINK ABOUT...
-
-# How about a `ps` classmethod in Process which would split the
-# result of... oh wait. What about Windows? UGH!
-
-
-
+#  - How about a `ps` classmethod in Process which would split the
+#    result of... oh wait. What about Windows? UGH!
 #
 # ALSO...
+#  - It may be useful to make Process a contextmanager; have to think
+#    about this.
 #
-It may be useful to make Process a contextmanager; have to think
-about this.
-
 
 
 
