@@ -114,7 +114,7 @@ class sockserv(sockurl, sockprop):
 		# BIND (to address)
 		s.bind((
 			c.get('host', ''),      # default: available interfaces
-			c.get('port', 0) or 0   # required
+			c.get('port', 0) or 0   # default: random port
 		))
 		
 		# LISTEN (for incoming connections)
