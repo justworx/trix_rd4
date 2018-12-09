@@ -52,7 +52,7 @@ class EncodingHelper(object):
 		Return dict with default 'encoding' and 'errors' values as given
 		to this object's constructor.
 		"""
-		return self.__ek
+		return dict(self.__ek)
 	
 	@property
 	def encoding(self):
