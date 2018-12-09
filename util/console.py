@@ -82,11 +82,9 @@ class Console(BaseOutput):
 			
 			* Entered text will be sent to the target stream.
 			* Prefix Console commands with the forward-slash "/" 
-			  character.
-			* Commands prefixed with an exclamation point "!" 
-			  character are directed to the 'wrapped' object.
-			  This allows methods to be called and properties
-			  read and set.
+			  character. Eg., "/exit", "/debug True", etc...
+			* Commands prefixed with an exclamation point "!" character
+			  are directed to the 'wrapped' object..
 			* Ctrl-c to exit.
 		"""
 		ll = msg.splitlines()
