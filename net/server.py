@@ -23,13 +23,11 @@ class Server(sockserv, Runner):
 		Pass config as a dict, url, address, or port, as required by the
 		sockinfo.listen() classmethod.
 		
-		Minimum Required params:
-		 - port
-		
 		Optional additional params:
 		 # Server params
 		 - backlog : max waiting connections. default: socket.SOMAXCONN
 		 - host    : default: ''
+		 - port    : Port on which to listen. Default: 0 (random port)
 		 - handler : A type or type desc. Eg, "trix.net.handler.Handler"
 		 - nhandler: String spec, inner path. Eg, "net.handler.Handler"
 		 - reuse   : True
@@ -188,8 +186,16 @@ class Server(sockserv, Runner):
 			handler = self.handler,
 			handlerk = self.handlerk,
 			handlers = self.handlers, #len(self.handlers),
-			iocount = self.iocount
+			iocount = self.iocount,
+			port = self.port
 		))
+		
+		#
+		# messages/errors
+		#  - This needs to be buffered with a Buffer object; it could 
+		#    really fill up memory after a while if left as it currently
+		#    is.
+		#
 		if len(self.messages):
 			status['messages'] = list(self.messages)
 			self.messages = []
