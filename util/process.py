@@ -45,9 +45,10 @@ class Process(Runner):
 	
 	CLINE = "%s -m %s launch %s"
 	CTIME = 300 # timeout for socket connect-back: default 5m
+	CTOUT = 3.0 # timeout for cport communication response 3s
 	DEBUG = {}
-	HAND = 'net.handler.hlines.HandleLines'
-	WRAP = 'util.sock.sockwrap.sockwrap'
+	HAND = trix.innerpath('net.handler.hlines.HandleLines')
+	WRAP = trix.innerpath('util.sock.sockwrap.sockwrap')
 	ENCODE = DEF_ENCODE
 	
 	#
@@ -63,8 +64,9 @@ class Process(Runner):
 		must communicate by bytes encoded with the specified encoding (or 
 		DEF_ENCODE).
 		
-		Note that the Runner will also react to the same kwargs as the
-		remote process, so their "sleep" time will be in synch.
+		Note that the remote process Runner will also react to the same 
+		kwargs as this Process object (in this local process), so their 
+		"sleep" time will be in synch.
 		"""
 		
 		rk = trix.kpop(k, 'encoding errors sleep')
@@ -285,7 +287,7 @@ class Process(Runner):
 		"""Return the remote process status as a dict."""
 		self.write('status\r\n')
 		tstart = time.time()
-		tmout = tstart+1.1
+		tmout = tstart+self.CTOUT
 		while time.time() < tmout:
 			status = self.read().strip()
 			if status:
@@ -336,8 +338,8 @@ class Process(Runner):
 					
 					# got a connection; wrap sock and set `chand`
 					if h:
-						self.__csock = trix.ncreate(self.WRAP, h[0])
-						self.__chand = trix.ncreate(self.HAND, h[0])
+						self.__csock = trix.create(self.WRAP, h[0])
+						self.__chand = trix.create(self.HAND, h[0])
 						self.__cserv.shutdown()
 						self.__cserv = None
 						
@@ -588,6 +590,7 @@ class Process(Runner):
 		# CONTROL SERVER
 		#
 		if self.__ctime:
+			# always use the basic socserv class here
 			self.__cserv = trix.ncreate('util.sock.sockserv.sockserv', 0)
 			self.__cport = self.__cserv.port
 		
