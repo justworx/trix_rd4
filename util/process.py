@@ -532,6 +532,18 @@ class Process(Runner):
 		return self.__csock.send(data)
 	
 	
+	# query
+	def query(self, cmd):
+		"""
+		Query the remote process; Return result as a dict.
+		"""
+		self.writeline(cmd)
+		tstart = time.time()
+		tmout = tstart+self.CTOUT
+		while time.time() < tmout:
+			reply = self.read().strip()
+			if reply:
+				return trix.jparse(reply)
 	
 	
 	

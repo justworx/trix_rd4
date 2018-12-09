@@ -314,11 +314,9 @@ class Server(sockserv, Runner):
 				# create a handler; add it to the list 
 				handler = self.handler(conn, **self.handlerk)
 				self.addHandler(handler)
-				
-				#print ("SERVER-DEBUG", self.handlerk)
-				
 			except socket.timeout:
 				pass # ignore timeout
+			
 			
 			# call `handle()` on each handler
 			for h in self.handlers:
@@ -328,6 +326,10 @@ class Server(sockserv, Runner):
 					try:
 						h.handle()
 					except BaseException as ex:
+						self.messages.append([
+							"handler-err", h, type(ex), ex.args, xdata()
+						])
+						"""
 						try:
 							self.messages.append([
 								"handler-err", h, type(ex), ex.args, xdata()
@@ -343,6 +345,7 @@ class Server(sockserv, Runner):
 							pass
 						finally:
 							remove.append(h)
+						"""
 			
 			# remove handlers marked for removal
 			for r in remove:
@@ -357,7 +360,30 @@ class Server(sockserv, Runner):
 			# SLEEP
 			#  - sleep a bit (eg, 0.1 seconds)
 			time.sleep(self.sleep)
-
+	
+	
+	
+	def query(self, q):
+			q = q.strip()
+			if q == 'handlers':
+				r = []
+				e = []
+				try:
+					for handler in self.handlers:
+						r.append({
+								"addr"     : handler.addr, 
+								"peer"     : handler.peer,
+								"maxidle"  : handler.maxidle,
+								"lastrecv" : handler.lastrecv,
+								"countdown": handler.countdown
+							})
+					return dict(query=q, reply=r)
+				except Exception as ex:
+					e.append(str(ex), xdata())
+					return dict(query=q, reply=r, error=e)
+			
+			# if not handled above, pass the query up to Runner
+			return Runner.query(self, q)
 
 
 
