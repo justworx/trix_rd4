@@ -11,14 +11,18 @@ from .. import *
 class xiter(object):
 	"""Cross-version iterator support."""
 	
-	def __init__(self, iteratable):
-		self.__iteratable = iteratable
-	
+	def __init__(self, iterable):
+		try:
+			iterable.__next__
+			self.__iterable = iterable
+		except AttributeError:
+			self.__iterable = iter(iterable)
+			
 	def __iter__(self):
-		return iter(self.__iteratable)
+		return iter(self.__iterable)
 	
 	def __next__(self):
-		return next(self.__iteratable)
+		return next(self.__iterable)
 	
 	def next(self):
 		try:
@@ -31,11 +35,11 @@ class xiter(object):
 			except AttributeError:
 				xd2 = xdata()
 				try:
-					self.__next = self.__iteratable.next
+					self.__next = self.__iterable.next
 					return self.__next()
 				except:
 					raise Exception('err-iter-fail', xdata(
-							iterable=self.__iteratable, T=type(self.__iteratable),
+							iterable=self.__iterable, T=type(self.__iterable),
 							xd1=xd1, xd2=xd2
 						))
 
