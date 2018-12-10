@@ -20,11 +20,11 @@ class Inspect(object):
 	only that.
 	
 	python3
-	>>> from trix.x.xinspect import *
-	>>> from trix.app.form import *
-	>>> ii = Inspect(form.Form())
-	>>> ii.methods
-	>>> ii.properties
+	>>> from trix.util.xinspect import *
+	>>> from trix.util.lineq import *
+	>>> ii = Inspect(LineQueue())
+	>>> ii.methods.keys()
+	>>> ii.properties.keys()
 	"""
 	
 	def __init__(self, o):
