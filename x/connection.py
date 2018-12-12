@@ -4,8 +4,8 @@
 # of the GNU Affero General Public License.
 #
 
-from ...util.runner import *
-from ...net.connect import *
+from ..util.runner import *
+from ..net.connect import *
 
 
 class Connection(Runner, Connect):
@@ -51,7 +51,11 @@ class Connection(Runner, Connect):
 	
 	
 	
-	def close(self):
-		
-	
-				
+	def io(self):
+		# I2t's ok to override io() with a meaningless something-or-other
+		# to ... i dunno... just do something... because Runner.io() is
+		# absolutly blank. Does nothing - is just a placeholder. Right?
+		pass
+
+
+
