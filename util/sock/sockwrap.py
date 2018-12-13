@@ -23,7 +23,7 @@ class SockFatal(SockError): pass
 DEF_BUFFER = 4096       
 
 
-class sockwrap(sockconf, EncodingHelper, sockprop):
+class sockwrap(sockconf, sockprop, EncodingHelper):
 	"""Socket connection class implements i/o methods."""
 	
 	def __init__(self, sock, config=None, **k):
