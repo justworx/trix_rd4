@@ -8,21 +8,13 @@ from ..util.runner import *
 from ..net.connect import *
 
 
-class Connection(Runner, Connect):
+class Connection(Runner):
 	"""Threadable single-connection runner."""
 	
 	def __init__(self, config=None, **k):
-		if config:
-			if isinstance(config, dict):
-				config.update(k)
-				config.setdefault('encoding', DEF_ENCODE)
-				self.config = config
-			else:
-				# if config is not given by dict, it must be a url
-				k.setdefault('encoding', DEF_ENCODE)
-		
+		"""Pass config params for Runner and Connect."""
 		Runner.__init__(self, config, **k)
-	
+		self.__connect = None
 	
 	
 	def open(self):
@@ -38,10 +30,11 @@ class Connection(Runner, Connect):
 		if self.active:
 			raise Exception('already-open')
 		
-		Connect.__init__(self, self.config)
-		Runner.open()
+		# create a Connect based on config provided to init
+		self.__connect = Connect(self.config)
+		Runner.open(self)
 		
-		# 
+		# perform any necessary connection procedures
 		self.register()
 		
 	
@@ -55,7 +48,20 @@ class Connection(Runner, Connect):
 		# I2t's ok to override io() with a meaningless something-or-other
 		# to ... i dunno... just do something... because Runner.io() is
 		# absolutly blank. Does nothing - is just a placeholder. Right?
-		pass
-
+		r = self.__connect.read()
+		if r:
+			self.output(r.strip())
+		
+	
+	
+	def close(self):
+		if self.active or self.__connect:
+			try:
+				self.__connect.shutdown()
+				del(self.__connect)
+			finally:
+				self.__connect = None
+			
+			
 
 
