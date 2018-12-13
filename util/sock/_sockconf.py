@@ -48,17 +48,17 @@ class sockconf(object):
 
 	@property
 	def ctimeout(self):
-		"""Returns timeout value."""
+		"""Returns connection timeout value."""
 		return self.__config.get('ctimeout', SOCK_CTIMEOUT)
 
 	@property
 	def family(self):
-		"""Returns timeout value."""
+		"""Returns socket family."""
 		return self.__config.get('family', DEF_FAMILY)
 
 	@property
 	def socktype(self):
-		"""Returns timeout value."""
+		"""Returns socket type."""
 		try:
 			return self.__socktype
 		except:
@@ -74,7 +74,7 @@ class sockconf(object):
 
 	@property
 	def proto(self):
-		"""Returns timeout value."""
+		"""Returns protocol value."""
 		return self.__config.get('proto', DEF_PROTO)
 
 
