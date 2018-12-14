@@ -81,6 +81,7 @@ p.shutdown()
 # ALSO...
 #  - It may be useful to make Process a contextmanager; have to think
 #    about this.
+#  - Ohhh... Signal could be, too!
 #
 
 
