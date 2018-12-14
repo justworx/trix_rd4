@@ -1,0 +1,21 @@
+#
+# util.sock class inherritance
+#
+{
+	"util" : {
+		"sock" : {
+			"sockcon" : {
+				"sockurl" : {},
+				"sockwrap" : {
+					"sockconf" : {}, 
+					"sockprop" : {},
+					"EncodingHelper" : {}
+				}
+			},
+			"sockserv" : {
+				"sockurl"  : {},
+				"sockprop" : {}
+			}
+		},
+	}
+}
