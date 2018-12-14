@@ -1,0 +1,30 @@
+
+
+python3
+
+from trix.x.connection import *
+from trix.net.server import *
+
+s = Server(9999).starts()
+c = Connection(9999).starts()
+
+c.peer
+
+
+
+# DEBUGGING THING
+
+from trix.util.sak import *
+
+# dig the 'realsock' the whole util.sock mess of classes
+sak.odir(c, contains="sock")
+
+# this actually returns the real, true socket (rather than the 
+# proxy returned by c.socket).
+x = sak.odict(c, '_sockprop__realsock')
+
+# do whatever
+x.peer
+
+
+
