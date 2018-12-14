@@ -8,13 +8,19 @@ from ..util.runner import *
 from ..net.connect import *
 
 
-class Connection(Runner):
+class Connection(Runner, Connect):
 	"""Threadable single-connection runner."""
 	
 	def __init__(self, config=None, **k):
 		"""Pass config params for Runner and Connect."""
+		
+		# get the config dict that calling sockcon would create
+		self.__config = sockurl(config, **k).config
+		
+		# create the Runner portion of this object immediately
 		Runner.__init__(self, config, **k)
 		self.__connect = None
+	
 	
 	
 	def open(self):
@@ -31,7 +37,7 @@ class Connection(Runner):
 			raise Exception('already-open')
 		
 		# create a Connect based on config provided to init
-		self.__connect = Connect(self.config)
+		Connect.__init__(self, self.__config)
 		Runner.open(self)
 		
 		# perform any necessary connection procedures
@@ -45,23 +51,35 @@ class Connection(Runner):
 	
 	
 	def io(self):
-		# I2t's ok to override io() with a meaningless something-or-other
+		#
+		# It's ok to override io() with a meaningless something-or-other
 		# to ... i dunno... just do something... because Runner.io() is
 		# absolutly blank. Does nothing - is just a placeholder. Right?
-		r = self.__connect.read()
+		#
+		
+		# actually, this probably should include a lineq
+		r = self.read()
 		if r:
 			self.output(r.strip())
 		
 	
 	
 	def close(self):
-		if self.active or self.__connect:
+		if self.active:
 			try:
-				self.__connect.shutdown()
-				del(self.__connect)
+				Runner.close(self)
+			except:
+				pass
+			try:
+				Connect.shutdown(self)
 			finally:
-				self.__connect = None
-			
-			
+				pass
+	
+	
+	
+	def shutdown(self):
+		self.close()
+		Runner.stop(self)
+	
 
 
