@@ -118,11 +118,7 @@ class Runner(Output):
 				trix.log("csock-write-pid", trix.pid(), type(ex), ex.args)
 				self.__csock = None
 				self.__lineq = None
-				
-				trix.log ("Runner init", csock=str(self.__csock), 
-						config=self.config, cport=self.__cport
-					)
-			
+	
 	
 	
 	# ----------------------------------------------------------------
