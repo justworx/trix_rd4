@@ -113,7 +113,7 @@ class Runner(Output):
 			self.__cport = p = self.config["CPORT"]
 			self.__csock = trix.ncreate('util.sock.sockcon.sockcon', p)
 			try:
-				self.__csock.output("%i" % trix.pid())
+				self.__csock.writeline("%i" % trix.pid())
 			except Exception as ex:
 				trix.log("csock-write-pid", trix.pid(), type(ex), ex.args)
 				self.__csock = None
@@ -399,7 +399,7 @@ class Runner(Output):
 				r = dict(query=q, reply=None, error='unknown-query')
 			
 			# write the query back to the caller
-			self.csock.output(self.__jformat(r))
+			self.csock.writeline(self.__jformat(r))
 			
 			# read another line (returns None when done)
 			q = self.__lineq.readline()
