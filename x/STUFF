@@ -7,6 +7,9 @@ from trix.net.server import *
 
 s = Server(9999).starts()
 c = Connection(9999).starts()
+c.open()
+c.write('test')
+c.read()
 
 c.peer
 
