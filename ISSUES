@@ -1,12 +1,12 @@
 
-
 PREP TO HANDLE SIGHUP AND SIGTERM
 
-The key here is to call shutdown for all Runner objects. They're
+The idea here is to call shutdown for all Runner objects. They're
 the ones that could leave remote processes held open after the 
 main process dies, orphaning the subprocesses. A Runner.stopall() 
-classmethod would call all Runner objects shutdown methods, adding
-Runner objects on __init__ and removing on __del__.
+classmethod would call all Runner objects shutdown methods. We'll
+need a class variable that stores all Runners, and changes to 
+__init__ and __del__ keep this class variable up-to-date.
 
 trix.signals(signal.SIGHUP, Runner.stopall)
 trix.signals(signal.SIGTERM, Runner.stopall)
@@ -30,47 +30,6 @@ debugging/logging feature.
 
 
 
-#
-# PROCESS TEST
-#
-
-Process works again. I'd sleepily changed the socket writeline calls
-to output(). *eyeroll*
-
-A test for the Process class might be buildable, starting with this
-code, below...
-
-```python3
-
-from trix import *
-p = trix.nprocess("net.server.Server", 0).launch('run')
-
-try:
-	status = p.rstatus()
-	pid = p.pid
-	port = status.get("reply", {}).get("server", {}).get("port")
-	
-	c = trix.ncreate("net.connect.Connect", port)
-	c.write("TEST\r\n")
-	
-	assert(c.read() == "TEST\r\n")
-
-finally:
-	p.shutdown()
-
-```
-
-
-from trix import *
-p = trix.nprocess("net.server.Server", 0).launch('run')
-
-time.sleep(0.1)
-p.query('ping')
-
-p.shutdown()
-
-
-
 
 
 #
@@ -79,9 +38,9 @@ p.shutdown()
 #    result of... oh wait. What about Windows? UGH!
 #
 # ALSO...
-#  - It may be useful to make Process a contextmanager; have to think
-#    about this.
-#  - Ohhh... Signal could be, too!
+#  - It may be useful to make Process a context manager; have to 
+#    think about this.
+#  - Might be useful for Signal, too.
 #
 
 
