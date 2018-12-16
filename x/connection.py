@@ -17,9 +17,18 @@ class Connection(Runner, Connect):
 		# get the config dict that calling sockcon would create
 		self.__config = sockurl(config, **k).config
 		
+		# default encoding
+		self.__config.setdefault('encoding', DEF_ENCODE)
+		
 		# create the Runner portion of this object immediately
 		Runner.__init__(self, config, **k)
 		self.__connect = None
+	
+	
+	
+	@property
+	def rconfig(self):
+		return self.__config
 	
 	
 	
@@ -38,6 +47,8 @@ class Connection(Runner, Connect):
 		
 		# create a Connect based on config provided to init
 		Connect.__init__(self, self.__config)
+		self.config.update(self.__config)
+		
 		Runner.open(self)
 		
 		# perform any necessary connection procedures
