@@ -8,22 +8,6 @@ import gc
 from collections import defaultdict
 from trix import *
 
-#
-# RIGHT... this is all wrong. It doesn't work. 
-# 
-# Apparently it's not finding changes since the last check, but is
-# just adding 1 of each object each time get() is called (resulting
-# in a doubling of whatever the previous count for any given object
-# had been).
-#
-# Obviously, this is useless. What I'm looking for is:
-# [CURRENT COUNT] - [START COUNT] for each existing class.
-# 
-# I don't think the fix is going to happen tonight. Too sleepy.
-# Probably need to rebuild from a fresh copy from the original 
-# source.
-#
-
 
 class Profile(object):
 	"""
@@ -33,9 +17,25 @@ class Profile(object):
 	# INIT
 	def __init__(self, **kwargs):
 		"""
-		Profile names/counts of objects created starting with this
-		object's creation.
+		Generate 'start' list and process/store options.
+		
+		Options passed by keyword argument include:
+		 * prefix - the start of names of objects of interest, given as
+		            space-delimited strings;
+		 * limit  - full name of objects given as the space-delimited
+		            strings.
+		
+		These options are mutually exclusive; If prefix is given, limit
+		is ignored.
 		"""
+		
+		#
+		# Options are "prefix" and "limit" are mentioned below
+		#
+		self.__options = {}
+		for k in kwargs:
+			self.__options[k] = kwargs[k].split()
+		
 		self.__start = defaultdict(int)
 		for o in gc.get_objects():
 			self.__start[self.__key(o)] += 1

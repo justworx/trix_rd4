@@ -4,25 +4,9 @@
 # the terms of the GNU Affero General Public License.
 #
 
-import gc
-from collections import defaultdict
 from trix import *
-
-#
-# RIGHT... this is all wrong. It doesn't work. 
-# 
-# Apparently it's not finding changes since the last check, but is
-# just adding 1 of each object each time get() is called (resulting
-# in a doubling of whatever the previous count for any given object
-# had been).
-#
-# Obviously, this is useless. What I'm looking for is:
-# [CURRENT COUNT] - [START COUNT] for each existing class.
-# 
-# I don't think the fix is going to happen tonight. Too sleepy.
-# Probably need to rebuild from a fresh copy from the original 
-# source.
-#
+from collections import defaultdict
+import gc
 
 
 class Profile(object):
@@ -32,10 +16,9 @@ class Profile(object):
 	
 	# INIT
 	def __init__(self, **kwargs):
-		"""
-		Profile names/counts of objects created starting with this
-		object's creation.
-		"""
+		"""Generate 'start' list and process/store options."""
+		
+		# get original starting set of in-memory objects
 		self.__start = defaultdict(int)
 		for o in gc.get_objects():
 			self.__start[self.__key(o)] += 1
@@ -44,9 +27,7 @@ class Profile(object):
 	# GET-OBJECTS
 	def __getobjects(self):
 		"""
-		This seems to be returning a dict containing a current count of
-		each object type... apparently for comparison to previous counts
-		of the object.
+		Get the set of objects in memory right now.
 		"""
 		currentObjects = defaultdict(int)
 		for o in gc.get_objects():
@@ -56,9 +37,7 @@ class Profile(object):
 	
 	# CURRENT
 	def __current(self):
-		"""
-		Generates list of all objects currently in memory.
-		"""
+		"""Generates list of all objects currently in memory."""
 		newObjects = defaultdict(int)
 		for o in gc.get_objects():
 			newObjects[self.__key(o)] += 1
@@ -67,38 +46,21 @@ class Profile(object):
 	
 	# KEY
 	def __key(self, o):
+		"""
+		Utility for generating display name (module.classname). Returns
+		only classname for builtin classes.
+		"""
 		try:
 			return "%s.%s" % (o.__module__, o.__name__)
 		except:
 			return str(type(o))
 	
 	
-	# OPT-SHOW
-	def __opt_show(self, k):
-		"""
-		Return True if key `k` starts with a prefix given to constructor
-		as selectable.
-		"""
-		if 'prefix' in self.__options:
-			for s in self.__options['prefix']:
-				if k.startswith(s):
-					return True
-			return False
-		elif 'limit' in self.__options:
-			return k in self.__options['limit']
-		return True
-	
-	
-	@property
-	def options(self):
-		return self.__options
-	
-	
 	@property
 	def start(self):
 		"""
-		Returns a (usually large) dict of objects/counts that were in 
-		memory at the time of this Profile object's creation.
+		Returns a dict of objects/counts that were in memory at the time
+		of this Profile object's creation.
 		"""
 		return self.__start
 	
@@ -120,8 +82,7 @@ class Profile(object):
 		for s in cur:
 			if s in self.__start:
 				ct = cur[s] - self.__start[s]
-				if (ct > 0) and self.__opt_show(s):
-					r[s] = ct
+				r[s] = ct
 		return r
 	
 	
