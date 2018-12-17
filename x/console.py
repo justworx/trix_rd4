@@ -5,7 +5,7 @@
 #
 
 
-from ..x.output import * # trix, enchelp, sys
+from ..util.output import * # trix, enchelp, sys
 from ..util.event import *
 from ..util.xinput import *
 from ..util.wrap import *
