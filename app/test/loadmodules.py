@@ -81,7 +81,9 @@ class Test(object):
 		"""Generator for module (/full/dir/*.py) paths."""
 		for path in self.paths:
 			#print (" - ", path)
-			if '/x/' in path:
+			if ('/bu/' in path) or (".bu" in path):
+				pass
+			elif '/x/' in path:
 				pass
 			elif '_x' in path:
 				pass
@@ -183,7 +185,7 @@ class Test(object):
 		for modspec in self.current:
 			item = self.current[modspec]
 			gg.append([
-				modspec, "Loaded" if item.get('module') else "ERR! %s" % (
+				modspec, "OK" if item.get('module') else "ERR! %s" % (
 					str(item.get('error',{}).get('prior',{}).get('xargs', '?'))
 				)
 			])
