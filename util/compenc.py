@@ -59,10 +59,11 @@ class bz2():
 def compact(data, encoding=DEF_ENCODE):
 	"""
 	Compact bytes using zlib.compress, then b64.encode. Use `expand` to
-	retreive these compacted bytes.
+	retreive these compacted bytes. If `data` is given as unicode text,
+	pass the encoding (or default DEF_ENCODE is used).
 	
-	NOTE: The purpose here is not to make `data` smaller, but to make it
-	      portable (in as compact a package as possible).
+	NOTE: The purpose here is not to make `data` smaller, but to make 
+	      it portable (in as compact a package as possible).
 	"""
 	try:
 		return b64.encode(zlib.compress(data))
@@ -72,8 +73,15 @@ def compact(data, encoding=DEF_ENCODE):
 
 # EXPAND
 def expand(data, encoding=DEF_ENCODE):
-	"""Expand `data` previously compressed by `compact`."""
+	"""
+	Expand `data` previously compressed by `compact`.
+	
+	NOTE: Always returns bytes! The encoding argument is used only in
+	      cases where `data` is given as unicode text rather than
+	      bytes. The caller must decode to unicode.
+	"""
 	try:
 		return zlib.decompress(b64.decode(data))
 	except:
 		return zlib.decompress(b64.decode(data.encode(encoding)))
+
