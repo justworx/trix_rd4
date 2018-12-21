@@ -5,15 +5,11 @@
 #
 
 
-from .output import * # trix, enchelp, sys
-from .event import *
-from .xinput import *
-from .wrap import *
+from ..util.output import * # trix, enchelp, sys
+from ..util.event import *
+from ..util.wrap import *
+from ..util.xinput import *
 
-
-#
-# ---- CONSOLE -----
-#
 
 class Console(BaseOutput):
 	"""
@@ -48,6 +44,14 @@ class Console(BaseOutput):
 	
 	
 	@property
+	def commandprefix(self):
+		return self.__prefixc
+	
+	@property
+	def wrapperprefix(self):
+		return self.__prefixw
+	
+	@property
 	def debug(self):
 		"""Debug setting."""
 		return self.__debug
@@ -73,7 +77,7 @@ class Console(BaseOutput):
 	#
 	def banner(self):
 		"""Display entry banner."""
-		self.output("\n#\n# CONSOLE\n", newl='')
+		self.output("\n#\n# %s\n" % type(self).__name__, newl='')
 		
 		if self.__wrap:
 			W = self.__wrap
@@ -134,11 +138,11 @@ class Console(BaseOutput):
 				# make sure there's some text to parse
 				if line:
 					# get and handle event
-					if line[0] == '/':
+					if line[0] == self.__prefixc:
 						# this is a command for the console object
 						e = self.create_event(line[1:])
 						self.handle_command(e)
-					elif line[0] == '!':
+					elif line[0] == self.__prefixw:
 						# this is a command for the wrapped object
 						e = self.create_event(line[1:])
 						self.handle_wrapper(e)
@@ -180,6 +184,9 @@ class Console(BaseOutput):
 	def handle_command(self, e):
 		"""
 		Handle input event `e`.
+		
+		Handle commands prefixed with the `commandprefix` character. 
+		These are commands handled by the Console object.
 		"""
 		if e.argvl[0] == 'debug':
 			if e.arg(1):
@@ -201,8 +208,10 @@ class Console(BaseOutput):
 	
 	def handle_wrapper(self, e):
 		"""
-		Handle commands prefixed with the exclamation point '!' 
-		character - wrapped object commands.
+		Handle input event `e`.
+		
+		Handle commands prefixed with the `wrapperprefix` character - 
+		wrapped object commands.
 		
 		NOTE: Wrapper commands are case-sensitive.
 		"""		
