@@ -1,14 +1,11 @@
 #
-# There's a problem with this one! Doesn't work with the relative
-# path import.
-# 
-# I'm going to try fixing all the others and then hope those fixes
-# will resolve this problem. The static import is probably in 
-# __main__ or something __main__ depends on. cline/launch, I'll bet.
+# Copyright 2018 justworx
+# This file is part of the trix project, distributed under the terms 
+# of the GNU Affero General Public License.
 #
-#
-"""
+
 from .... import *
+
 
 p = trix.nprocess("net.server.Server", 0).launch('run')
 time.sleep(1)
@@ -24,6 +21,7 @@ try:
 	time.sleep(0.1)
 	assert(c.read() == "TEST\r\n")
 
+
 except Exception as ex:
 	trix.display(str(ex), xdata())
 
@@ -31,4 +29,4 @@ finally:
 	if p:
 		p.shutdown()
 
-"""
+

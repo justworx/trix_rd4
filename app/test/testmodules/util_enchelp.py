@@ -1,3 +1,8 @@
+#
+# Copyright 2018 justworx
+# This file is part of the trix project, distributed under the terms 
+# of the GNU Affero General Public License.
+#
 
 
 from ....util.enchelp import *
@@ -38,7 +43,7 @@ assert(eh.sansEncoding(d) == {'foo': 'bar'})
 
 
 #
-# much more could be tested here, but this is the basic needs
+# much more could be tested here, but this covers the basic needs
 #
 
 

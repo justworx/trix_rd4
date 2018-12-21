@@ -1,7 +1,13 @@
+#
+# Copyright 2018 justworx
+# This file is part of the trix project, distributed under the terms 
+# of the GNU Affero General Public License.
+#
 
 #
-# This also covers util.wrap and util.inspect, at least to some
-# degree... good enough for a first draft of this test suite.
+# NOTE:
+#  - This also covers util.wrap and util.inspect, at least to some
+#    degree... good enough for a first draft of this test suite.
 #
 
 
