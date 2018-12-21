@@ -4,7 +4,8 @@
 # of the GNU Affero General Public License.
 #
 
-import signal, trix
+import signal
+from .. import *
 
 
 class Signals(object):
