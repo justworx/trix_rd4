@@ -5,9 +5,9 @@
 #
 
 from time import gmtime, strftime
-from trix.util import urlinfo, mime
-from trix.net.handler import *
-from trix.net.httpreq import *
+from ....util import urlinfo, mime
+from ....net.handler import *
+from ....net.httpreq import *
 
 
 #

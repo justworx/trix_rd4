@@ -4,7 +4,7 @@
 # of the GNU Affero General Public License.
 #
 
-from trix import *
+from .. import *
 
 Server = NLoader('net.server', 'Server')
 Connect = NLoader('net.connect', 'Connect')

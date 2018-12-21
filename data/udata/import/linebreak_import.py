@@ -7,8 +7,8 @@
 # UNDER CONSTRUCTION!
 # This will eventually be moved to app.cline, I guess
 
-from trix import *
-from trix.util.xiter import *
+from .... import *
+from ....util.xiter import *
 
 
 if __name__ == '__main__':

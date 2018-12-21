@@ -1,6 +1,6 @@
 
 
-from trix.fmt import *
+from ..fmt import *
 
 class linedbg(object):
 	

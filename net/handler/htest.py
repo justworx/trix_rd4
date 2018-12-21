@@ -9,7 +9,7 @@ from .hhttp import *
 
 class HTest(HandleHttp):
 	"""
-	This class exists only as an example for the `cline.http` doc.
+	The HTest class exists only as an example for the `cline.http` doc.
 	"""
 	
 	def reply(self, req):

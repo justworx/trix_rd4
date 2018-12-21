@@ -3,7 +3,7 @@
 # This will handle Runner, Output, and Signal(s)
 #
 
-from trix.util.runner import *
+from ....util.runner import *
 
 class TestRunner(Runner):
 	"""

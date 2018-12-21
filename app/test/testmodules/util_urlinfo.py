@@ -5,8 +5,8 @@
 #
 
 
-from trix.util.urlinfo import *
-from trix.util.wrap import Wrap
+from ....util.urlinfo import *
+from ....util.wrap import Wrap
 
 
 u = urlinfo("http://example.com:9999/test?foo=bar")
