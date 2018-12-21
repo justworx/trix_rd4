@@ -4,12 +4,29 @@
 # of the GNU Affero General Public License.
 #
 
+#
+# EXPERIMENTAL - Exploritory; Under construction.
+#
+# This module is experimental, exploratory, and under construction,
+# and probably will remain so for quite some time. 
+# 
 
 from ..fmt import FormatBase
 
 
 class Lines(FormatBase):
-	"""Format line width and output."""
+	"""
+	Format line width and output.
+	#
+	# This module is experimental, exploratory, and under construction,
+	# and probably will remain so for a long time.
+	#
+	# I strongly recommend NOT using it in any real application, as it
+	# may change in extreme ways.
+	#
+	# It may disappear completely.
+	#
+	"""
 	
 	DefLength = 69
 	
