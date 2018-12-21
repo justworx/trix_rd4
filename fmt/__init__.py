@@ -82,7 +82,6 @@ JSON     = NLoader("fmt.jformat", "JSON")
 List     = NLoader("fmt.grid", "List")
 Grid     = NLoader("fmt.grid", "Grid")
 Table    = NLoader("fmt.table", "Table")
-Lines    = NLoader("fmt.lines", "Lines")
 
 
 
@@ -91,5 +90,14 @@ Lines    = NLoader("fmt.lines", "Lines")
 #  - Expand compacted strings to their original form.
 #
 expand = FormatBase.expand
+
+
+
+#
+# EXPERIMENTAL
+#  - Exploritory; Under construction; May change significantly;
+#    Might disappear entirely.
+#
+Lines = NLoader("fmt.lines", "Lines")
 
 
