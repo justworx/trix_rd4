@@ -5,10 +5,10 @@
 #
 
 
-from ..util.output import * # trix, enchelp, sys
-from ..util.event import *
-from ..util.xinput import *
-from ..util.wrap import *
+from .output import * # trix, enchelp, sys
+from .event import *
+from .xinput import *
+from .wrap import *
 
 
 #
@@ -26,6 +26,7 @@ class Console(BaseOutput):
 		
 		config = config or {}
 		config.update(k)
+		config.setdefault("output", sys.stdout)
 		
 		BaseOutput.__init__(self, config)
 		
@@ -34,6 +35,10 @@ class Console(BaseOutput):
 		
 		# wrapper
 		self.__wrap = Wrap(config.get('wrap'))
+		
+		# command prefixes
+		self.__prefixc = "/"
+		self.__prefixw = '!'
 	
 	
 	
@@ -70,6 +75,18 @@ class Console(BaseOutput):
 		"""Display entry banner."""
 		self.output("\n#\n# CONSOLE\n", newl='')
 		
+		if self.__wrap:
+			W = self.__wrap
+			T = type(W.o) # type of the wrapped object
+			wtype = "%s.%s" % (T.__module__, T.__name__)
+			try:
+				# try to get a name property (eg, Runner.name)
+				wdesc = "%s : %s" % (wtype, W.name)
+			except:
+				wdesc = wtype
+		else:
+			wdesc = None
+		
 		#
 		# Some of this needs to be transferred to a /help section.
 		# The command characters need to be configurable, and the
@@ -77,20 +94,15 @@ class Console(BaseOutput):
 		# to describe them (instead of, eg, "exclamation point" and 
 		# "forward-slash").
 		#
-		msg = """
-		-- THIS CLASS IS UNDER CONSTRUCTION! EXPECT CHANGES. --
-			
-			* Entered text will be sent to the target stream.
-			* Prefix Console commands with the forward-slash "/" 
-			  character.
-			* Commands prefixed with an exclamation point "!" 
-			  character are directed to the 'wrapped' object.
-			  This allows methods to be called and properties
-			  read and set.
-			* Ctrl-c to exit.
-		"""
-		ll = msg.splitlines()
-		for line in ll:
+		msg = [
+			"THIS CLASS IS UNDER CONSTRUCTION! EXPECT CHANGES!",
+			" * Output Target Object   : %s" % wdesc,
+			" * Output Target Stream   : %s" % type(self.target).__name__,
+			" * Console Command Prefix : %s" % self.__prefixc,
+			" * Object Command Prefix  : %s" % self.__prefixw,
+			" * Ctrl-c to exit."
+		]
+		for line in msg:
 			self.output("#  " + line.lstrip("\t"))
 	
 	

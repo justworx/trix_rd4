@@ -17,28 +17,34 @@ class Connection(Connect, Runner):
 		# GAR! I need some way to set defaults, don't I?
 		#      It has to be done before Connect is inited.
 		#
+		conf = sockconf(config, **k)
 		
 		# connect to remote socket
-		Connect.__init__(self, config, **k)
+		Connect.__init__(self, conf, **k)
 		
 		# register connection here
 		self.register(self)
 		
 		# start handling connection
-		Runner.__init__(self, self.config)
-		
-		#
-		# Set active to true since Connect aspect of the object is now
-		# connected. Subsequent calls to `open` will hit this object's
-		# `open` method.
-		#
-		Runner.open(self)
-		
-		# Start managing (running) the connection.
-		if self.config.get("auto") == 'run':
-			self.run()
-		elif self.config.get('auto', True) == 'start':
-			self.start()
+		Runner.__init__(self, conf)
+	
+	
+	def open(self):
+		if not self.active:
+			Connect.__init__(self, self.config, **k)
+			self.register()
+	
+	def close(self):
+		if self.active:
+			Connect.shutdown(self)
+			Runner.close(self)
+	
+	def register(self):
+		pass
+	
+	
+	
+	
 	
 	
 	@property
@@ -56,17 +62,4 @@ class Connection(Connect, Runner):
 	@property
 	def nick(self):
 		return self.config['nick']
-	
-	
-	
-	def register(self):
-		pass
-	
-	
-	
-	def open(self):
-		if not self.active:
-			Connect.__init__(self, config, **k)
-	
-	
 	
