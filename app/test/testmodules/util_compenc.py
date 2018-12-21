@@ -4,7 +4,7 @@
 # of the GNU Affero General Public License.
 #
 
-from trix.util.compenc import * 
+from ....util.compenc import * 
 
 assert(b64.encode(b"abc") == b'YWJj')
 assert(b64.decode(b"YWJj") == b'abc')

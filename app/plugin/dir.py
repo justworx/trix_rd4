@@ -5,7 +5,7 @@
 #
 
 
-from trix.app.plugin import *
+from . import *
 
 
 class Dir(Plugin):

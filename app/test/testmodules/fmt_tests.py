@@ -14,9 +14,10 @@ assert(expanded_bytes == b"bob's, your, Uncle!")
 
 # JSON
 d = {'a':1, 'b':9, 'c':4}
-assert(JSON().format(d) == '{"a": 1, "b": 9, "c": 4}')
-assert(JDisplay().format(d)=='{\n  "a": 1,\n  "b": 9,\n  "c": 4\n}')
-assert(JCompact().format(d)=='{"a":1,"b":9,"c":4}')
+k = dict(sort_keys=True)
+assert(JSON(**k).format(d) == '{"a": 1, "b": 9, "c": 4}')
+assert(JDisplay(**k).format(d)=='{\n  "a": 1,\n  "b": 9,\n  "c": 4\n}')
+assert(JCompact(**k).format(d)=='{"a":1,"b":9,"c":4}')
 
 
 #LIST/GRID/TABLE

@@ -1,5 +1,5 @@
 
-from trix.util.bag import *
+from ....util.bag import *
 
 x = Bag(int)
 x.add('Bag-int', 1)

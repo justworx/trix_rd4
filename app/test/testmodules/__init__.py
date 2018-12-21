@@ -6,20 +6,20 @@
 
 
 # UTIL.BOM
-from trix.util.bom import *
+from ....util.bom import *
 assert(testbom("abc".encode("utf32")).startswith('utf_32'))
 assert(testbom("abc".encode("utf16")).startswith('utf_16'))
 assert(testbom("abc".encode("utf_8_sig")) == "utf_8_sig")
 
 
 # UTIL.CONVERT
-from trix.util.convert import *
+from ....util.convert import *
 assert(Convert().temp('f', 'c', 0) == 32)
 assert(Convert().temp('c', 'f', 32) == 0)
 
 
 # UTIL.ENCODED (bom detection is already done, above)
-from trix.util.encoded import *
+from ....util.encoded import *
 tests = [
 	b"Test-garbage < charset = utf_8 > blah-blah",
 	b'Test-garbage < encoding= "utf_8" > blah-blah',
@@ -30,14 +30,14 @@ for test in tests:
 
 
 # UTIL.DQ
-from trix.util.dq import *
+from ....util.dq import *
 dd = {'A':{'b':[9,8,7]}}
 assert(dq(dd, ['A']) == {'b':[9,8,7]})
 assert(dq(dd, '/A/b/1') == 8)
 
 
 # UTIL.LINEQ
-from trix.util.lineq import *
+from ....util.lineq import *
 q = LineQueue(encoding='utf_8')
 q.feed("Abcd\r\n123")
 assert(q.q.get() == "Abcd\r\n")
@@ -45,12 +45,12 @@ assert(q.fragment == '123')
 
 
 # UTIL.MATHEVAL
-from trix.util.matheval import *
+from ....util.matheval import *
 assert(matheval("1+2") == 3)
 
 
 # UTIL.MIME
-from trix.util.mime import *
+from ....util.mime import *
 assert(Mime("test.txt").guess == ('text/plain', None))
 
 

@@ -1,6 +1,6 @@
 
 
-from trix.util.enchelp import *
+from ....util.enchelp import *
 
 
 eh = EncodingHelper(encoding='utf8', errors="replace")
