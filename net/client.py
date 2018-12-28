@@ -114,7 +114,7 @@ class Client(Runner):
 			self.__connections[connid] = connection
 		except Exception as ex:
 			raise type(ex)('err-connect-fail', xdata(
-				xprior=[xt,xa,xd], config=config, T=T
+				xprior=[xt,xa,xd], T=T #, config=config
 			))			
 	
 	
