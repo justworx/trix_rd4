@@ -1,0 +1,38 @@
+
+
+IRC IS CURRENTLY UNAVAILABLE:
+
+Recent changes to runner have caused irc/* to fail. Updates are in 
+progress, but may not be available for quite a while.
+
+Meanwhile...
+Use trix-rd3 if you need an irc bot.
+
+
+
+
+
+
+ --------- NEW DEVELOPMENT - UNDER CONSTRUCTION! ---------
+
+		The irc/irc_client.py module is deprecated. Use irc.bot.Bot
+		instead.
+
+
+As before...
+
+  This `trix.net.irc` package is under construction.
+  It's still buggy, but closer than before.
+  There's a long way to go yet.
+
+
+
+# Example
+
+```python3
+
+from trix.net.irc.bot import *
+b = Bot('Your_Bot_Name')
+b.start()
+
+```
