@@ -9,7 +9,8 @@ from .. import *
 from ..util.xiter import *
 from ..data.cursor import *
 
-class walker(xiter):
+
+class Walker(xiter):
 	# Try it as an xiter...
 	
 	def __init__(self, top, **k):
@@ -18,26 +19,39 @@ class walker(xiter):
 
 	def __next__(self):
 		try:
-			self.data = xiter.__next__(self)
+			self.__data = xiter.__next__(self)
 			return self
 		except TypeError as ex:
 			raise TypeError(*ex.args, xdata())
+	
+	@property
+	def data(self):
+		try:
+			return self.__data
+		except AttributeError:
+			self.__data = xiter.__next__(self)
+			return self.__data
 	
 	@property
 	def path(self):
 		return self.data[0]
 	
 	@property
-	def files(self):
-		return self.data[1]
+	def pathlist(self):
+		return self.data[0].split("/")
 	
 	@property
-	def dirs(self):
+	def filelist(self):
 		return self.data[2]
 	
+	@property
+	def dirlist(self):
+		return self.data[1]
 	
 
 
+
+"""
 
 class Walker(Cursor):
 	# Walk through directories.
@@ -52,7 +66,6 @@ class Walker(Cursor):
 	
 	
 	
-	"""
 	@classmethod
 	def files(cls, top, fn=None, **k):
 		wk = trix.kpop("topdown followlinks")
@@ -79,7 +92,7 @@ class Walker(Cursor):
 		#
 		# Search files by content.
 		#
-	"""
+"""
 	
 
 
