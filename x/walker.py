@@ -52,6 +52,41 @@ class Walker(xiter):
 
 
 """
+	
+	def query(self, source, fn):
+		r = []
+		for item in source:
+			x = fn(item)
+			if x:
+				r.append(x)
+	
+
+	
+class walker_query(
+
+	def filequery(self, action='select', **k):
+		#
+		#Perform actions on the current directory's files.
+		#
+		#Pass action from this list: ["select"]. Default is "select".
+		#More actions may (probably) become available in the future.
+		#
+		#The 'select' action returns a list of files that match given
+		#keyword arguments.
+		#
+		#Keyword arguments:
+		# * stat : a list of constants from stats constrain the results
+		#
+		
+		r = []
+		for p in self.filelist:
+			pp = path(self.path)(p)
+			st = os.stat(pp)
+			
+"""
+
+
+"""
 
 class Walker(Cursor):
 	# Walk through directories.
