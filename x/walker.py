@@ -6,7 +6,38 @@
 
 import os
 from .. import *
+from ..util.xiter import *
 from ..data.cursor import *
+
+class walker(xiter):
+	# Try it as an xiter...
+	
+	def __init__(self, top, **k):
+		wk = trix.kcopy(k, "topdown followlinks")
+		xiter.__init__(self, os.walk(top, **wk))
+
+	def __next__(self):
+		try:
+			self.data = xiter.__next__(self)
+			return self
+		except TypeError as ex:
+			raise TypeError(*ex.args, xdata())
+	
+	@property
+	def path(self):
+		return self.data[0]
+	
+	@property
+	def files(self):
+		return self.data[1]
+	
+	@property
+	def dirs(self):
+		return self.data[2]
+	
+	
+
+
 
 class Walker(Cursor):
 	# Walk through directories.
