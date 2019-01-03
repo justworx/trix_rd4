@@ -34,126 +34,119 @@ class Walker(xiter):
 	
 	@property
 	def path(self):
+		"""Path (fs.Path) object for current directory."""
+		return trix.path(self.data[0])
+	
+	@property
+	def itempath(self):
+		"""String path to current directory."""
 		return self.data[0]
 	
 	@property
 	def pathlist(self):
+		"""List of path elements for current item."""
 		return self.data[0].split("/")
 	
 	@property
-	def filelist(self):
-		return self.data[2]
-	
-	@property
 	def dirlist(self):
+		"""List of subdirectories in current directory."""
 		return self.data[1]
 	
-
-
-
-"""
+	@property
+	def filelist(self):
+		"""List of file names in current directory."""
+		return self.data[2]
 	
-	def query(self, source, fn):
-		r = []
-		for item in source:
-			x = fn(item)
-			if x:
-				r.append(x)
+	
+	@property
+	def files(self):
+		"""File selector for current path."""
+		return file_selector(self)
 	
 
-	
-class walker_query(
 
-	def filequery(self, action='select', **k):
-		#
-		#Perform actions on the current directory's files.
-		#
-		#Pass action from this list: ["select"]. Default is "select".
-		#More actions may (probably) become available in the future.
-		#
-		#The 'select' action returns a list of files that match given
-		#keyword arguments.
-		#
-		#Keyword arguments:
-		# * stat : a list of constants from stats constrain the results
-		#
+
+
+class walker_selector(xiter):
+	"""
+	This class would be the base for file_selector and dir_selector
+	subclasses, each of which would provide methods/properties that
+	return the appropriate file- or directory-related features.
+	"""
+	def __init__(self, walker, itemlist):
+		xiter.__init__(self, itemlist)
+		self.w = walker
+		self.x = None
+		self.i = -1
 		
-		r = []
-		for p in self.filelist:
-			pp = path(self.path)(p)
-			st = os.stat(pp)
-			
-"""
+		# prefetch first item; set item count to 0.
+		self.next()
+	
+	
+	def __next__(self):
+		self.x = xiter.__next__(self)
+		self.i += 1
+		return self
+	
+	
+	@property
+	def walker(self):
+		"""The Walker object that generated this path/data."""
+		return self.w
+	
+	@property
+	def path(self):
+		"""The string path for the current file or directory."""
+		return self.fspath.path
+	
+	@property
+	def fspath(self):
+		"""The fs.Path object wrapping this item."""
+		return trix.path(self.w.path)(self.x)
+	
+	@property
+	def dirpath(self):
+		"""
+		Return the full directory path string for the current item,
+		either a full file path or full directory path, depending on
+		the subclass.
+		"""
+		return self.__dirpath
+	
+	@property
+	def filelist(self):
+		"""Return a list of all files in the current directory."""
+		return self.walker.filelist
 
 
-"""
 
-class Walker(Cursor):
-	# Walk through directories.
+
+
+class file_selector(walker_selector):
 	
-	def __init__(self, top, **k):
-		wk = trix.kcopy(k, "topdown followlinks")
-		Cursor.__init__(self, os.walk(top, **wk), **k)
+	def __init__(self, walker):
+		walker_selector.__init__(self, walker, walker.filelist)
 	
-	# now we can fetch cursor results as filtered by `use`...
-	
-	# we also need convenience methods for commonly needed tasks
-	
-	
-	
-	@classmethod
-	def files(cls, top, fn=None, **k):
-		wk = trix.kpop("topdown followlinks")
-		for w in self.walk(top, **wk):
-			
 	
 	#
-	# These need to be handled differently... maybe find should be a
-	# generator... i dunno... something's not right here.
-	# 
+	# This is explorator but... maybe like this: 
 	#
-	def find(self, fn, **k):
-		# 
-		# Find files by name.
-		#
-		# Pass a callable function that recieves the triplet from walk
-		# and returns True for selected items.
-		# 
-		for x in iter(self):
-			if fn(x):
-				print (x[0])
+	def query(self, selection, action):
+		"""
+		Pass a selection function and an action function. 
+		
+		This method loops through all files in self.filelist. Any files
+		selected by the selection function (if it returns True) will be
+		altered by the action function. Both `selection` and `action`
+		receive `self` (this object) as their only argument.
+		"""
+		if selection(self):
+			action(self)
 	
-	def search(self, fn, **k):
-		#
-		# Search files by content.
-		#
-"""
-	
+	#
+	# if this ends up working, it will probably be moved to the
+	# walker_selector class - it's simple enough to be shared by
+	# both file_selector and dir_selector (coming soon).
+	#
 
 
-
-"""
-class Walker(object):
-	# Walk through directories.
-	
-	def __init__(self, topdown=True, followlinks=False):
-		self.__topdown = True
-		self.__followlinks = followlinks
-	
-	def walk(self, top, filter=None):
-		ii = iter(os.walk(top, self.__topdown, self.__followlinks))
-		for x in ii:
-			self.onstep(x)
-	
-	def onstep(self, x):
-		d={
-			'top' : x[0],
-			'dir' : x[1],
-			'files' : x[2]
-		}
-		trix.display(d)
-	
-	def onerror(self, *a, **k):
-		pass
-	
-"""
