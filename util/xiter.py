@@ -4,12 +4,18 @@
 # the terms of the GNU Affero General Public License.
 #
 
-
-from .. import *
+from ..import *
 
 
 class xiter(object):
-	"""Cross-version iterator support."""
+	"""
+	Cross-version iterator support.
+	
+	Implements an iterator that supports both self.next() and the 
+	built-in next() method so as to work in both python 2 and 3.
+	Override the __next__() method to customize the behavior for both
+	ways of calling. Do not override self.next().
+	"""
 	
 	def __init__(self, iterable):
 		try:
@@ -17,7 +23,7 @@ class xiter(object):
 			self.__iterable = iterable
 		except AttributeError:
 			self.__iterable = iter(iterable)
-			
+	
 	def __iter__(self):
 		return iter(self.__iterable)
 	
@@ -42,5 +48,5 @@ class xiter(object):
 							iterable=self.__iterable, T=type(self.__iterable),
 							xd1=xd1, xd2=xd2
 						))
-
+	
 
