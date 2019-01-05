@@ -4,10 +4,26 @@
 
 from trix.x.walker import *
 w = Walker("trix")
+
+
 w.path
+w.itempath
 w.pathlist
 w.filelist
 w.dirlist
+
+
+from trix.x.walker import *
+w = Walker("trix")
+r = w.files.query(lambda s: s.path.name not in ['.git','__pycache__'])
+trix.display(r)
+
+
+
+from trix.x.walker import *
+w = Walker("trix")
+for item in w.dirs.query(lambda s: s.path.name.startswith("__")):
+  print(item.name)
 
 ```
 

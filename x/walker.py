@@ -13,7 +13,7 @@ from ..data.cursor import *
 class Walker(xiter):
 	# Try it as an xiter...
 	
-	def __init__(self, top, **k):
+	def __init__(self, top='.', **k):
 		wk = trix.kcopy(k, "topdown followlinks")
 		xiter.__init__(self, os.walk(top, **wk))
 
@@ -40,12 +40,12 @@ class Walker(xiter):
 	@property
 	def itempath(self):
 		"""String path to current directory."""
-		return self.data[0]
+		return self.path(self.data[0]).path
 	
 	@property
 	def pathlist(self):
 		"""List of path elements for current item."""
-		return self.data[0].split("/")
+		return self.itempath.split("/")[1:]
 	
 	@property
 	def dirlist(self):
@@ -57,6 +57,11 @@ class Walker(xiter):
 		"""List of file names in current directory."""
 		return self.data[2]
 	
+	
+	@property
+	def dirs(self):
+		"""Directory selector for current path."""
+		return dir_selector(self)
 	
 	@property
 	def files(self):
@@ -79,7 +84,7 @@ class walker_selector(xiter):
 		self.x = None
 		self.i = -1
 		
-		# prefetch first item; set item count to 0.
+		# prefetch first item; sets item count to 0.
 		self.next()
 	
 	
@@ -96,42 +101,36 @@ class walker_selector(xiter):
 	
 	@property
 	def path(self):
-		"""The string path for the current file or directory."""
-		return self.fspath.path
-	
-	@property
-	def fspath(self):
 		"""The fs.Path object wrapping this item."""
-		return trix.path(self.w.path)(self.x)
+		return self.w.path(self.x)
 	
 	@property
-	def dirpath(self):
-		"""
-		Return the full directory path string for the current item,
-		either a full file path or full directory path, depending on
-		the subclass.
-		"""
-		return self.__dirpath
+	def name(self):
+		"""The string path for the current file or directory."""
+		return self.path.name
+	
+	@property
+	def itempath(self):
+		"""The string path for the current file or directory."""
+		return self.path.path
 	
 	@property
 	def filelist(self):
 		"""Return a list of all files in the current directory."""
 		return self.walker.filelist
-
-
-
-
-
-class file_selector(walker_selector):
 	
-	def __init__(self, walker):
-		walker_selector.__init__(self, walker, walker.filelist)
 	
 	
 	#
-	# This is explorator but... maybe like this: 
+	# This is exploratory but, maybe *something* like this. Probably
+	# the arguments will change - likely to kwargs, something like the
+	# way data.udata.charinfo is done.
 	#
-	def query(self, selection, action):
+	# I suspect I'll be playing with this for a long time before it's
+	# conclusion, which very well may be the deletion of this file from
+	# the project.
+	#
+	def query(self, selection=None, action=None):
 		"""
 		Pass a selection function and an action function. 
 		
@@ -140,13 +139,43 @@ class file_selector(walker_selector):
 		altered by the action function. Both `selection` and `action`
 		receive `self` (this object) as their only argument.
 		"""
-		if selection(self):
-			action(self)
+		if not selection:
+			selection = lambda x: True
+		
+		try:
+			r = []
+			while True:
+				if selection(self):
+					r.append(self.path)
+					if action:
+						action(self)
+				self.next()
+		except StopIteration:
+			return r
 	
-	#
-	# if this ends up working, it will probably be moved to the
-	# walker_selector class - it's simple enough to be shared by
-	# both file_selector and dir_selector (coming soon).
-	#
+
+
+
+
+class dir_selector(walker_selector):
+	
+	def __init__(self, walker):
+		"""Call walker_selector init, passing the file list."""
+		walker_selector.__init__(self, walker, walker.dirlist)
+	
+
+
+
+
+class file_selector(walker_selector):
+	
+	def __init__(self, walker):
+		"""Call walker_selector init, passing the file list."""
+		walker_selector.__init__(self, walker, walker.filelist)
+	
+	@property
+	def stat(self):
+		return os.stat(self.itempath)
+	
 
 
